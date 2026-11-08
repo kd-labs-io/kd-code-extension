@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries after 0.0.1 are generated from [Conventional Commits](https://www.conventionalcommits.org/) by release-please.
 
+## [0.0.2](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.1...v0.0.2) (2026-11-08)
+
+
+### Chores
+
+* release 0.0.2 ([07425fb](https://github.com/kd-labs-io/kd-code-extension/commit/07425fb7f72b5ed6dd9645b4927b3152d0198a67))
+
 ## [0.0.1] - 2026-11-07
 
 First public version.
