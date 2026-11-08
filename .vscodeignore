@@ -23,3 +23,4 @@ mise.toml
 .git-blame-ignore-revs
 release-please-config.json
 .release-please-manifest.json
+.env
