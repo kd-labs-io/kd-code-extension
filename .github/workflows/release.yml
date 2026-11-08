@@ -66,12 +66,12 @@ jobs:
       - run: npm run package
 
       - name: Publish to Visual Studio Marketplace
-        run: npx vsce publish --oidc --packagePath "release/kd-code-$VERSION.vsix"
+        run: npx vsce publish --oidc --skip-duplicate --packagePath "release/kd-code-$VERSION.vsix"
 
       - name: Attach the package to the GitHub release
-        run: gh release upload "$TAG" "release/kd-code-$VERSION.vsix"
+        run: gh release upload --clobber "$TAG" "release/kd-code-$VERSION.vsix"
         env:
           GH_TOKEN: ${{ github.token }}
 
       - name: Publish to Open VSX
-        run: npx --yes ovsx@^1.3.0 publish --trusted-publishing --packagePath "release/kd-code-$VERSION.vsix"
+        run: npx --yes ovsx@^1.3.0 publish --trusted-publishing --skip-duplicate --packagePath "release/kd-code-$VERSION.vsix"
