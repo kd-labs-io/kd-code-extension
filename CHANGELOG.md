@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries after 0.0.1 are generated from [Conventional Commits](https://www.conventionalcommits.org/) by release-please.
 
+## [0.0.3](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.2...v0.0.3) (2026-11-09)
+
+
+### Added
+
+* **chat:** mark deferred MCP tools in the context panel ([e4fcd68](https://github.com/kd-labs-io/kd-code-extension/commit/e4fcd68a7a449af232db57dc7e312f256a7a74ac))
+* **chat:** show Codex instruction files and skills in the context panel ([b00b6f6](https://github.com/kd-labs-io/kd-code-extension/commit/b00b6f61426a65cfd1efc7fe2714c703c30a7e38))
+* **chat:** show OpenCode instruction files, skills and MCP servers in the context panel ([e93c4b9](https://github.com/kd-labs-io/kd-code-extension/commit/e93c4b91971e81ba0f6956acbc9375f98daa03b2))
+* **chat:** show what fills the context window in the usage panel ([93993df](https://github.com/kd-labs-io/kd-code-extension/commit/93993dfe4606e9b3898ac0bc92010dfab1143bd4))
+* **settings:** show connection check progress and suggest OpenCode v2 on setup ([24e86cf](https://github.com/kd-labs-io/kd-code-extension/commit/24e86cfd5e403befec5a2069737ea03e989e72a7))
+* **telemetry:** send agents' OpenTelemetry to an OTLP endpoint ([9a43ccc](https://github.com/kd-labs-io/kd-code-extension/commit/9a43ccc52eb647d7691a2fab21de5e654c025b0b))
+
 ## [0.0.2](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.1...v0.0.2) (2026-11-08)
 
 
