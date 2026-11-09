@@ -25,13 +25,17 @@ const GROUP_TITLES: Record<ContextGroupKind, MessageKey> = {
   agents: "chat.context.agents",
 };
 
-/** Labels of the sources the agent names by their settings layer. */
+/** Labels of the sources the agent names by their settings layer, or as the type of a memory file. */
 const SOURCES: Record<string, MessageKey> = {
   userSettings: "chat.context.source.user",
   projectSettings: "chat.context.source.project",
   localSettings: "chat.context.source.local",
   policySettings: "chat.context.source.policy",
   plugin: "chat.context.source.plugin",
+  User: "chat.context.source.user",
+  Project: "chat.context.source.project",
+  Local: "chat.context.source.local",
+  Managed: "chat.context.source.policy",
 };
 
 const fileName = (path: string) => path.split(/[\\/]/).pop() || path;
@@ -107,7 +111,11 @@ export function ContextBreakdownView({
             </summary>
             <span className="context-items">
               {group.items.map((item) => (
-                <span key={item.name} className="context-item" title={item.name}>
+                <span
+                  key={item.name}
+                  className="context-item"
+                  title={item.description ? `${item.name}\n${item.description}` : item.name}
+                >
                   {group.kind === "memoryFiles" ? (
                     <a className="context-name" onClick={() => openFile({ path: item.name })}>
                       {fileName(item.name)}

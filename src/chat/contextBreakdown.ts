@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { CONTEXT_COMMAND, type ContextUsage } from "../claudeContext";
+import { instructionFiles, readsAgentsMd, type InstructionFile } from "../codexContext";
 import type { ChatUi } from "./host";
 import type { Tab } from "./tabs";
 
@@ -11,6 +12,8 @@ export interface ContextItem {
   readonly source?: string;
   /** How many tools an MCP server has in the window. */
   readonly tools?: number;
+  /** What it is for, as the agent describes it (a skill's description). */
+  readonly description?: string;
 }
 
 export type ContextGroupKind = "memoryFiles" | "mcpServers" | "skills" | "agents";
@@ -89,13 +92,45 @@ export interface ContextHost extends Pick<ChatUi, "postTab" | "run"> {
   sendQueued(tab: Tab): void;
 }
 
+/** The skills an agent offers as `$name` commands (Codex does), which it lists to the model. */
+const skillsOf = (commands: Tab["commands"]): ContextItem[] =>
+  (commands ?? []).flatMap(({ name, description }) =>
+    name.startsWith("$") && name.length > 1 ? [{ name: name.slice(1), description: description || undefined }] : [],
+  );
+
 /** What fills the context windows of tabs' sessions. */
 export class TabContext {
   constructor(private readonly host: ContextHost) {}
 
+  /** The instruction files found for a tab's session, by tab; `undefined` while they are looked for. */
+  private readonly instructions = new WeakMap<Tab, { key: string; files?: ReadonlyArray<InstructionFile> }>();
+
   /** Whether the agent of the tab's session can measure its window. */
   private measurable(tab: Tab): boolean {
-    return !!tab.running?.agent.measuresContext && !!tab.commands?.includes(CONTEXT_COMMAND);
+    return !!tab.running?.agent.measuresContext && !!tab.commands?.some((c) => c.name === CONTEXT_COMMAND);
+  }
+
+  /**
+   * The instruction files an agent that doesn't report them reads into the tab's session, once found; looks for
+   * them, and shows them when found, the first time the session is shown.
+   */
+  private instructionFiles(tab: Tab, sessionId: string): ReadonlyArray<InstructionFile> {
+    if (!readsAgentsMd(tab.running?.agent.initializeResponse.agentInfo?.name)) return [];
+    const key = `${sessionId}\0${tab.cwd}`;
+    const known = this.instructions.get(tab);
+    if (known?.key === key) return known.files ?? [];
+    this.instructions.set(tab, { key });
+    this.host.run(
+      instructionFiles(tab.cwd).pipe(
+        Effect.map((files) => {
+          if (this.instructions.get(tab)?.key !== key) return;
+          this.instructions.set(tab, { key, files });
+          if (files.length && tab.sessionId === sessionId) this.post(tab);
+        }),
+      ),
+      tab,
+    );
+    return [];
   }
 
   /** Shows what is known about the window of the tab's session. */
@@ -106,10 +141,22 @@ export class TabContext {
       return;
     }
     const measured = tab.context?.sessionId === sessionId ? tab.context.breakdown : undefined;
-    const servers = running.agent.mcpServerNames(sessionId).map((name) => ({ name }));
-    const breakdown: ContextBreakdown = measured ?? {
+    if (measured) {
+      this.host.postTab(tab, { type: "contextBreakdown", breakdown: measured, measuring: !!tab.measuringContext });
+      return;
+    }
+    // Only what the client knows of the session.
+    const groups: ContextGroup[] = [
+      {
+        kind: "memoryFiles",
+        items: this.instructionFiles(tab, sessionId).map((file) => ({ name: file.path, source: file.scope })),
+      },
+      { kind: "mcpServers", items: running.agent.mcpServerNames(sessionId).map((name) => ({ name })) },
+      { kind: "skills", items: skillsOf(tab.commands) },
+    ];
+    const breakdown: ContextBreakdown = {
       categories: [],
-      groups: servers.length ? [{ kind: "mcpServers", items: servers }] : [],
+      groups: groups.filter((group) => group.items.length > 0),
       measurable: this.measurable(tab),
     };
     this.host.postTab(tab, { type: "contextBreakdown", breakdown, measuring: !!tab.measuringContext });

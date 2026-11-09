@@ -121,8 +121,8 @@ export interface Tab extends DraftHolder {
   running?: RunningAgent;
   /** The session's config options as the agent last reported them; the status bar shows the model. */
   configOptions?: ReadonlyArray<acp.SessionConfigOption>;
-  /** The names of the slash commands the session's agent last offered. */
-  commands?: ReadonlyArray<string>;
+  /** The slash commands the session's agent last offered. */
+  commands?: ReadonlyArray<{ readonly name: string; readonly description: string }>;
   /** Set while the agent measures the session's context window; the answer's table stays out of the conversation. */
   measuringContext?: boolean;
   /** What filled the context window of session `sessionId` when the agent last measured it. */

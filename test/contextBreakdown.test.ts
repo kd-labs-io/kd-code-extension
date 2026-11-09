@@ -66,6 +66,7 @@ describe("TabContext", () => {
       const tab = new TabList(undefined, () => "/w").active;
       const agent = {
         measuresContext: measures,
+        initializeResponse: { protocolVersion: 1 },
         mcpServerNames: () => ["docs"],
         prompt: (_sessionId: string, blocks: ReadonlyArray<{ text?: string }>) =>
           Effect.sync(() => {
@@ -76,7 +77,10 @@ describe("TabContext", () => {
       } as unknown as AcpAgent;
       tab.sessionId = "s1";
       tab.running = { agent, agentId: "claude", scope: yield* Scope.make() };
-      tab.commands = ["compact", "context"];
+      tab.commands = [
+        { name: "compact", description: "" },
+        { name: "context", description: "" },
+      ];
       const context: TabContext = new TabContext({
         postTab: (_tab, message) => void posted.push(message),
         run: () => {},

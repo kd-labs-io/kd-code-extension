@@ -270,7 +270,7 @@ export class TabAgents {
       this.host.setConfigOptions(tab, update.configOptions);
     }
     if (update.sessionUpdate === "available_commands_update") {
-      tab.commands = update.availableCommands.map((command) => command.name);
+      tab.commands = update.availableCommands.map(({ name, description }) => ({ name, description }));
       this.host.contextWindow.post(tab);
     }
     if (update.sessionUpdate === "tool_call" || update.sessionUpdate === "tool_call_update") {
