@@ -30,13 +30,19 @@ const state = (agents: CatalogAgent[], extra: Partial<CatalogState> = {}): Catal
   loading: false,
   ...extra,
 });
-const three = [agent("other"), agent("antigravity-acp", { kind: "binary" }), agent("codex-acp"), agent("claude-acp")];
+const three = [
+  agent("other"),
+  agent("antigravity-acp", { kind: "binary" }),
+  agent("opencode-v2", { kind: "binary" }),
+  agent("codex-acp"),
+  agent("claude-acp"),
+];
 
 describe("suggestedAgents", () => {
-  it("gives Claude and Codex in that order", () => {
+  it("gives Claude, Codex and OpenCode v2 in that order", () => {
     assert.deepStrictEqual(
       suggestedAgents(three).map((a) => a.id),
-      ["claude-acp", "codex-acp"],
+      ["claude-acp", "codex-acp", "opencode-v2"],
     );
   });
 
@@ -84,19 +90,23 @@ describe("AgentPicker", () => {
   it("picks the suggested agents at first, and installs what stays picked", () => {
     render(state(three));
     posted.length = 0;
-    assert.strictEqual(boxes().length, 2);
+    assert.strictEqual(boxes().length, 3);
     assert.isTrue(boxes().every((box) => box.checked));
 
     act(() => boxes()[1]!.click());
     assert.isFalse(button("chat.setup.continue").disabled);
     act(() => button("chat.setup.continue").click());
-    assert.deepStrictEqual(posted, [{ type: "catalogInstall", id: "claude-acp" }]);
+    assert.deepStrictEqual(posted, [
+      { type: "catalogInstall", id: "claude-acp" },
+      { type: "catalogInstall", id: "opencode-v2" },
+    ]);
   });
 
   it("needs one agent picked to continue", () => {
     render(state(three));
     act(() => boxes()[0]!.click());
     act(() => boxes()[1]!.click());
+    act(() => boxes()[2]!.click());
     assert.isTrue(button("chat.setup.continue").disabled);
   });
 

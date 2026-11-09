@@ -369,8 +369,9 @@ const en = {
   "settings.autoScroll": "Auto-scroll",
   "settings.autoScrollDesc":
     "Keep the chat scrolled to the newest content while the agent replies. Turn off to stay where you scrolled.",
-  "settings.tracing": "Tracing",
-  "settings.tracingTabDesc": "Details of each turn and of the ACP messages, for advanced users.",
+  "settings.tracing": "Local tracing",
+  "settings.tracingTabDesc":
+    "Details of each turn and of the ACP messages, shown in VS Code and kept on this machine, for advanced users.",
   "settings.tracingEnabled": "Turn on tracing",
   "settings.tracingDesc":
     "Show each turn's stop reason, duration, tokens, cost and context in the chat, and log every ACP message in the KD Code Trace output channel.",
@@ -400,6 +401,7 @@ const en = {
   "settings.telemetryLogToolDetails": "Include tool input",
   "settings.telemetryLogToolDetailsDesc": "Send the input of the tools agents run, such as commands and file paths.",
   "settings.telemetryCheck": "Check connection",
+  "settings.telemetryChecking": "Checking…",
   "settings.telemetryRestartNote":
     "Applies to agents started afterwards: open a new chat tab, or restart the agent, to use new settings.",
   "settings.telemetryPrivacy":

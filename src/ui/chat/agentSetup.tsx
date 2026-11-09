@@ -11,7 +11,7 @@ import type { AgentChoices } from "./agentPanel";
 import { post } from "./post";
 
 /** Registry ids of the agents offered first, in order, all picked until the user unticks them. */
-const SUGGESTED_AGENTS = ["claude-acp", "codex-acp"];
+const SUGGESTED_AGENTS = ["claude-acp", "codex-acp", "opencode-v2"];
 
 /** The suggested agents the registry has and this machine can install. */
 export function suggestedAgents(agents: ReadonlyArray<CatalogAgent>): CatalogAgent[] {

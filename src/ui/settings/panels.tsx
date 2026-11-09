@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import type { ApprovalRules, SessionDefaults, SettingKey, TelemetrySettings } from "../../settings";
+import { DOCTOR_STATUS } from "../doctorStatus";
 import { useMessages } from "../vscode";
 import { Icon } from "../icon";
 import { useL10n, type MessageKey, type Translate } from "../l10n";
@@ -472,8 +473,15 @@ function TelemetrySection({ state }: { state: State }) {
             >
               {t("settings.telemetryCheck")}
             </button>
+            {check.running && (
+              <span className="note muted check-pending" role="status">
+                <Icon svg={DOCTOR_STATUS.pending.icon} />
+                {t("settings.telemetryChecking")}
+              </span>
+            )}
             {check.message && (
               <span className={`note ${check.ok ? "success" : "error"}`} role="status">
+                <Icon svg={DOCTOR_STATUS[check.ok ? "ok" : "error"].icon} />
                 {check.message}
               </span>
             )}

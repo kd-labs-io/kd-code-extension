@@ -121,6 +121,13 @@ fieldset:disabled select {
 .note.success {
   color: var(--vscode-testing-iconPassed);
 }
+.note .icon,
+.note svg {
+  flex-shrink: 0;
+}
+.note.check-pending svg {
+  animation: catalog-spin 1s linear infinite;
+}
 .note.warning {
   color: var(--vscode-editorWarning-foreground);
 }

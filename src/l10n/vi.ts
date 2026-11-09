@@ -371,8 +371,9 @@ const vi: Record<MessageKey, string> = {
   "settings.autoScroll": "Tự động cuộn",
   "settings.autoScrollDesc":
     "Tự động cuộn chat xuống nội dung mới nhất khi agent trả lời. Tắt đi để giữ nguyên vị trí bạn đang xem.",
-  "settings.tracing": "Tracing",
-  "settings.tracingTabDesc": "Chi tiết của từng lượt và các message ACP, dành cho người dùng nâng cao.",
+  "settings.tracing": "Tracing cục bộ",
+  "settings.tracingTabDesc":
+    "Chi tiết của từng lượt và các message ACP, hiện trong VS Code và chỉ lưu trên máy này, dành cho người dùng nâng cao.",
   "settings.tracingEnabled": "Bật tracing",
   "settings.tracingDesc":
     "Hiện lý do dừng, thời lượng, token, chi phí và context của mỗi lượt trong chat, đồng thời ghi mọi message ACP vào output channel KD Code Trace.",
@@ -403,6 +404,7 @@ const vi: Record<MessageKey, string> = {
   "settings.telemetryLogToolDetails": "Gửi cả đầu vào của tool",
   "settings.telemetryLogToolDetailsDesc": "Gửi đầu vào của các tool mà agent chạy, như lệnh và đường dẫn file.",
   "settings.telemetryCheck": "Kiểm tra kết nối",
+  "settings.telemetryChecking": "Đang kiểm tra…",
   "settings.telemetryRestartNote":
     "Chỉ áp dụng cho các agent khởi động sau đó: mở tab chat mới hoặc khởi động lại agent để dùng thiết lập mới.",
   "settings.telemetryPrivacy":
