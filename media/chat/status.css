@@ -179,6 +179,9 @@
 .context-row[data-kind="deferred"] {
   color: var(--vscode-descriptionForeground);
 }
+.context-group[data-deferred] > summary .context-tokens {
+  color: var(--vscode-descriptionForeground);
+}
 .context-row[data-kind="deferred"] .context-swatch {
   background: none;
 }

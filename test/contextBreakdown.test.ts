@@ -45,6 +45,7 @@ describe("breakdownOf", () => {
           { name: "b", tokens: 50, tools: 1 },
           { name: "a", tokens: 40, tools: 2 },
         ],
+        deferred: "all",
       },
       {
         kind: "skills",
@@ -54,6 +55,16 @@ describe("breakdownOf", () => {
         ],
       },
     ]);
+  });
+
+  it("tells whether the MCP tools are outside the window", () => {
+    const mcpGroup = (categories: ContextUsage["categories"]) =>
+      breakdownOf({ ...usage, categories }, 0).groups.find((group) => group.kind === "mcpServers");
+    const loaded = { name: "MCP tools", tokens: 300, kind: "used" } as const;
+    const deferred = { name: "MCP tools (deferred)", tokens: 500, kind: "deferred" } as const;
+    assert.strictEqual(mcpGroup([loaded, deferred])?.deferred, "some");
+    assert.strictEqual(mcpGroup([loaded, { ...deferred, tokens: 0 }])?.deferred, undefined);
+    assert.strictEqual(mcpGroup([loaded])?.deferred, undefined);
   });
 });
 

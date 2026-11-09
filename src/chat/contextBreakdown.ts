@@ -24,6 +24,11 @@ export type ContextGroupKind = "memoryFiles" | "mcpServers" | "skills" | "agents
 export interface ContextGroup {
   readonly kind: ContextGroupKind;
   readonly items: ReadonlyArray<ContextItem>;
+  /**
+   * Whether the items' tokens are outside the window (deferred MCP tools, loaded only when the agent uses them):
+   * all of them, or some, as the agent doesn't say which tool is loaded.
+   */
+  readonly deferred?: "all" | "some";
 }
 
 /** A row of what fills the window. `kind`: in it, its free part, the compaction reserve, or out of it (deferred). */
@@ -59,14 +64,25 @@ function mcpServers(usage: ContextUsage): ContextItem[] {
   return [...servers].map(([name, { tokens, count }]) => ({ name, tokens, tools: count }));
 }
 
+/** The MCP tool rows of the agent's categories ("MCP tools", "MCP tools (deferred)"). */
+const isMcpCategory = (category: ContextUsage["categories"][number]) => /^MCP tools\b/i.test(category.name);
+
+/** How much of the MCP tools' tokens is outside the window, by the agent's categories. */
+function mcpDeferred(usage: ContextUsage): ContextGroup["deferred"] {
+  const mcp = usage.categories.filter((category) => isMcpCategory(category) && category.tokens > 0);
+  if (!mcp.some((category) => category.kind === "deferred")) return undefined;
+  return mcp.some((category) => category.kind === "used") ? "some" : "all";
+}
+
 /** The agent's measurement as the webview shows it. */
 export function breakdownOf(usage: ContextUsage, measuredAt: number): ContextBreakdown {
+  const deferred = mcpDeferred(usage);
   const groups: ContextGroup[] = [
     {
       kind: "memoryFiles",
       items: (usage.memory_files ?? []).map((file) => ({ name: file.path, source: file.type, tokens: file.tokens })),
     },
-    { kind: "mcpServers", items: mcpServers(usage) },
+    { kind: "mcpServers", items: mcpServers(usage), ...(deferred && { deferred }) },
     {
       kind: "skills",
       items: (usage.skills ?? []).map((skill) => ({ name: skill.name, source: skill.source, tokens: skill.tokens })),

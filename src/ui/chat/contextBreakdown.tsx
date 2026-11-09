@@ -103,11 +103,24 @@ export function ContextBreakdownView({
       {breakdown.groups.map((group) => {
         const tokens = group.items.reduce((sum, item) => sum + (item.tokens ?? 0), 0);
         return (
-          <details key={group.kind} className="context-group">
-            <summary>
+          <details key={group.kind} className="context-group" data-deferred={group.deferred}>
+            <summary
+              title={
+                group.deferred === "all"
+                  ? t("chat.context.deferred")
+                  : group.deferred === "some"
+                    ? t("chat.context.partlyDeferred")
+                    : undefined
+              }
+            >
               <span className="context-name">
                 {t(GROUP_TITLES[group.kind])} <span className="context-count">{group.items.length}</span>
               </span>
+              {group.deferred && (
+                <span className="context-detail">
+                  {t(group.deferred === "all" ? "chat.context.deferredLabel" : "chat.context.partlyDeferredLabel")}
+                </span>
+              )}
               {tokens > 0 && <span className="context-tokens">{compact.format(tokens)}</span>}
             </summary>
             <span className="context-items">
