@@ -169,6 +169,7 @@ const vi: Record<MessageKey, string> = {
   "chat.context.source.local": "Cục bộ",
   "chat.context.source.policy": "Quản trị",
   "chat.context.source.plugin": "Plugin",
+  "chat.context.source.builtin": "Có sẵn",
   "chat.context.tools": "{0} tool",
   "chat.context.deferred": "Nằm ngoài context window: chỉ nạp khi agent dùng đến",
   "chat.context.measuring": "Đang đo…",

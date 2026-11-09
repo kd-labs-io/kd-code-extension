@@ -169,6 +169,7 @@ const en = {
   "chat.context.source.local": "Local",
   "chat.context.source.policy": "Managed",
   "chat.context.source.plugin": "Plugin",
+  "chat.context.source.builtin": "Built-in",
   "chat.context.tools": "{0} tools",
   "chat.context.deferred": "Outside the window: loaded only when the agent uses them",
   "chat.context.measuring": "Measuring…",

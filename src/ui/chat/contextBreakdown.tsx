@@ -32,6 +32,7 @@ const SOURCES: Record<string, MessageKey> = {
   localSettings: "chat.context.source.local",
   policySettings: "chat.context.source.policy",
   plugin: "chat.context.source.plugin",
+  builtin: "chat.context.source.builtin",
   User: "chat.context.source.user",
   Project: "chat.context.source.project",
   Local: "chat.context.source.local",

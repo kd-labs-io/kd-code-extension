@@ -87,6 +87,8 @@ type RequestError = AuthRequiredError | AgentRequestError;
 
 /** A running ACP agent process. Its lifetime is the Scope it was spawned in. */
 export interface AcpAgent {
+  /** How the process was started. */
+  readonly command: AgentCommand;
   readonly initializeResponse: acp.InitializeResponse;
   readonly authMethods: ReadonlyArray<acp.AuthMethod>;
   /** Completes when the process exits on its own (not when its Scope closes). */
@@ -345,6 +347,7 @@ export const spawnAgent = Effect.fn("spawnAgent")(function* (
   const sessionMeta = contextMeasured ? { _meta: CONTEXT_USAGE_SESSION_META } : {};
 
   return {
+    command: agentCommand,
     initializeResponse,
     authMethods: initializeResponse.authMethods ?? [],
     exited: Deferred.await(exited),

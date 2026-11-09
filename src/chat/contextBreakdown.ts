@@ -1,6 +1,9 @@
 import { Effect } from "effect";
+import * as nodePath from "node:path";
 import { CONTEXT_COMMAND, type ContextUsage } from "../claudeContext";
-import { instructionFiles, readsAgentsMd, type InstructionFile } from "../codexContext";
+import type { AcpAgent } from "../acpClient";
+import * as codex from "../codexContext";
+import * as opencode from "../opencodeContext";
 import type { ChatUi } from "./host";
 import type { Tab } from "./tabs";
 
@@ -98,12 +101,73 @@ const skillsOf = (commands: Tab["commands"]): ContextItem[] =>
     name.startsWith("$") && name.length > 1 ? [{ name: name.slice(1), description: description || undefined }] : [],
   );
 
+/**
+ * How the client looks up what an agent that doesn't report it reads into a session in `cwd`: the files Codex
+ * finds, or what the OpenCode server knows. Undefined for other agents.
+ */
+function lookupFor(agent: AcpAgent, cwd: string) {
+  const info = agent.initializeResponse.agentInfo;
+  if (codex.readsAgentsMd(info?.name)) {
+    return codex
+      .instructionFiles(cwd)
+      .pipe(
+        Effect.map((files): ContextGroup[] => [
+          { kind: "memoryFiles", items: files.map((file) => ({ name: file.path, source: file.scope })) },
+        ]),
+      );
+  }
+  if (opencode.isOpenCodeServer(info) && opencode.apiCommand(agent.command, []) !== undefined) {
+    return Effect.all(
+      [opencode.instructionFiles(cwd), opencode.skills(agent.command, cwd), opencode.mcpServers(agent.command, cwd)],
+      { concurrency: "unbounded" },
+    ).pipe(
+      Effect.map(([files, skills, servers]): ContextGroup[] => [
+        { kind: "memoryFiles", items: files.map((file) => ({ name: file.path, source: file.scope })) },
+        ...(skills
+          ? [
+              {
+                kind: "skills" as const,
+                items: skills.map((skill) => ({
+                  name: skill.name,
+                  description: skill.description,
+                  source: skill.path.startsWith("skill://")
+                    ? "builtin"
+                    : isWithin(cwd, skill.path)
+                      ? "Project"
+                      : "User",
+                })),
+              },
+            ]
+          : []),
+        ...(servers
+          ? [
+              {
+                kind: "mcpServers" as const,
+                items: servers.map((server) => ({
+                  name: server.name,
+                  source: server.status === "connected" ? undefined : server.status,
+                })),
+              },
+            ]
+          : []),
+      ]),
+    );
+  }
+  return undefined;
+}
+
+/** Whether `file` is in the folder `dir`. */
+const isWithin = (dir: string, file: string) => {
+  const relative = nodePath.relative(dir, file);
+  return !!relative && !relative.startsWith("..") && !nodePath.isAbsolute(relative);
+};
+
 /** What fills the context windows of tabs' sessions. */
 export class TabContext {
   constructor(private readonly host: ContextHost) {}
 
-  /** The instruction files found for a tab's session, by tab; `undefined` while they are looked for. */
-  private readonly instructions = new WeakMap<Tab, { key: string; files?: ReadonlyArray<InstructionFile> }>();
+  /** What was looked up about a tab's session, by tab; `groups` is absent while it is looked up. */
+  private readonly found = new WeakMap<Tab, { key: string; groups?: ReadonlyArray<ContextGroup> }>();
 
   /** Whether the agent of the tab's session can measure its window. */
   private measurable(tab: Tab): boolean {
@@ -111,21 +175,23 @@ export class TabContext {
   }
 
   /**
-   * The instruction files an agent that doesn't report them reads into the tab's session, once found; looks for
-   * them, and shows them when found, the first time the session is shown.
+   * What the client looks up about the tab's session, for an agent that doesn't report it; looked up the first
+   * time the session is shown, and shown when found.
    */
-  private instructionFiles(tab: Tab, sessionId: string): ReadonlyArray<InstructionFile> {
-    if (!readsAgentsMd(tab.running?.agent.initializeResponse.agentInfo?.name)) return [];
+  private lookedUp(tab: Tab, sessionId: string): ReadonlyArray<ContextGroup> {
+    const agent = tab.running?.agent;
+    const lookup = agent && lookupFor(agent, tab.cwd);
+    if (!lookup) return [];
     const key = `${sessionId}\0${tab.cwd}`;
-    const known = this.instructions.get(tab);
-    if (known?.key === key) return known.files ?? [];
-    this.instructions.set(tab, { key });
+    const known = this.found.get(tab);
+    if (known?.key === key) return known.groups ?? [];
+    this.found.set(tab, { key });
     this.host.run(
-      instructionFiles(tab.cwd).pipe(
-        Effect.map((files) => {
-          if (this.instructions.get(tab)?.key !== key) return;
-          this.instructions.set(tab, { key, files });
-          if (files.length && tab.sessionId === sessionId) this.post(tab);
+      lookup.pipe(
+        Effect.map((groups) => {
+          if (this.found.get(tab)?.key !== key) return;
+          this.found.set(tab, { key, groups });
+          if (groups.length && tab.sessionId === sessionId) this.post(tab);
         }),
       ),
       tab,
@@ -145,15 +211,18 @@ export class TabContext {
       this.host.postTab(tab, { type: "contextBreakdown", breakdown: measured, measuring: !!tab.measuringContext });
       return;
     }
-    // Only what the client knows of the session.
-    const groups: ContextGroup[] = [
-      {
-        kind: "memoryFiles",
-        items: this.instructionFiles(tab, sessionId).map((file) => ({ name: file.path, source: file.scope })),
-      },
-      { kind: "mcpServers", items: running.agent.mcpServerNames(sessionId).map((name) => ({ name })) },
-      { kind: "skills", items: skillsOf(tab.commands) },
-    ];
+    // Only what the client knows of the session, and what it looked up.
+    const found = this.lookedUp(tab, sessionId);
+    const given = running.agent.mcpServerNames(sessionId).map((name): ContextItem => ({ name }));
+    const groups = (["memoryFiles", "mcpServers", "skills"] as const).map((kind): ContextGroup => {
+      const items = found.find((group) => group.kind === kind)?.items;
+      if (kind === "mcpServers") {
+        // The agent's own servers, then those the client gave the session.
+        const own = items ?? [];
+        return { kind, items: [...own, ...given.filter((s) => !own.some((o) => o.name === s.name))] };
+      }
+      return { kind, items: items ?? (kind === "skills" ? skillsOf(tab.commands) : []) };
+    });
     const breakdown: ContextBreakdown = {
       categories: [],
       groups: groups.filter((group) => group.items.length > 0),
