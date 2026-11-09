@@ -126,6 +126,9 @@ function App() {
     usage,
     compactAt,
     totals,
+    context,
+    measuringContext,
+    measuredUsed,
     status,
     attachments,
     commands,
@@ -202,6 +205,17 @@ function App() {
         onCompact={
           active !== undefined && commands.some((c) => c.name === "compact")
             ? () => post({ type: "send", tab: active, parts: ["/compact"] })
+            : undefined
+        }
+        context={context}
+        measuring={!!measuringContext}
+        contextStale={!!context?.measurable && measuredUsed !== (usage?.used ?? null)}
+        onMeasure={
+          active !== undefined && context?.measurable && !status.busy
+            ? () => {
+                update(active, (s) => ({ ...s, measuredUsed: s.usage?.used ?? null }));
+                post({ type: "measureContext", tab: active });
+              }
             : undefined
         }
       />
@@ -382,6 +396,8 @@ function App() {
       }
       case "sessionTotals":
         return update(tab, (s) => ({ ...s, totals: msg.totals ?? undefined }));
+      case "contextBreakdown":
+        return update(tab, (s) => ({ ...s, context: msg.breakdown ?? undefined, measuringContext: !!msg.measuring }));
       case "renameTab":
         return setRenaming(msg.tab);
       case "files":
@@ -400,6 +416,9 @@ function App() {
           usage: undefined,
           compactAt: undefined,
           totals: undefined,
+          context: undefined,
+          measuringContext: false,
+          measuredUsed: undefined,
           terminals: {},
           queue: [],
           backgroundTasks: [],

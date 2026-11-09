@@ -4,6 +4,7 @@ import { Deferred, Effect, Exit, Fiber, Scope } from "effect";
 import { AgentRequestError, AuthRequiredError, type AcpAgent } from "../src/acpClient";
 import { AgentPool } from "../src/chat/agents";
 import { ChangeReview } from "../src/chat/changes";
+import { TabContext } from "../src/chat/contextBreakdown";
 import type { ChatUi } from "../src/chat/host";
 import { Permissions } from "../src/chat/permissions";
 import { NoAgentError, TabSessions } from "../src/chat/sessions";
@@ -54,6 +55,8 @@ const makeSessions = Effect.fnUntraced(function* (
       }),
     cancel: () => Effect.void,
     prompt: () => Effect.succeed({ stopReason: "end_turn" }),
+    measuresContext: false,
+    mcpServerNames: () => [],
     ...overrides,
   } as unknown as AcpAgent;
   const running: RunningAgent = { agent, agentId: "a", scope: yield* Scope.make() };
@@ -83,7 +86,8 @@ const makeSessions = Effect.fnUntraced(function* (
     prepare: () => Effect.succeed(true),
     nameAfter: () => Effect.void,
   } as unknown as TabWorktrees;
-  const parts = { tabs, changes, usage, tabWorktrees };
+  const contextWindow = new TabContext({ ...ui, sendQueued: () => {} });
+  const parts = { tabs, changes, usage, contextWindow, tabWorktrees };
   const turns: TabTurns = new TabTurns(
     {
       ...ui,

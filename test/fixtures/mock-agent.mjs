@@ -66,7 +66,7 @@ acp
   .agent({ name: "mock-agent" })
   .onRequest(acp.methods.agent.initialize, ({ params }) => ({
     protocolVersion: acp.PROTOCOL_VERSION,
-    agentInfo: { name: "mock-agent", version: "9.9.9" },
+    agentInfo: { name: process.env.MOCK_AGENT_NAME ?? "mock-agent", version: "9.9.9" },
     agentCapabilities: {
       mcpCapabilities: { http: process.env.MOCK_HTTP === "1", sse: false },
       loadSession: process.env.MOCK_LOAD === "1",
@@ -93,7 +93,7 @@ acp
       sessionId,
       ...sessionOptions(),
       ...(process.env.MOCK_MODELS ? { configOptions: pickedOptions(sessionId) } : {}),
-      _meta: { cwd: params.cwd, mcpServers: params.mcpServers },
+      _meta: { cwd: params.cwd, mcpServers: params.mcpServers, meta: params._meta },
     };
   })
   .onRequest(acp.methods.agent.session.setConfigOption, ({ params }) => {
@@ -157,6 +157,31 @@ acp
         update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: message } },
       });
     switch (scenario) {
+      case "/context": {
+        // As claude-agent-acp: the SDK's messages (an assistant message without `context_usage` too), then the table.
+        const sdkMessage = (message) => client.notify("_claude/sdkMessage", { sessionId: params.sessionId, message });
+        await sdkMessage({ type: "assistant", message: { model: "claude" } });
+        await sdkMessage({
+          type: "assistant",
+          message: { model: "<synthetic>" },
+          context_usage: {
+            model: "claude",
+            total_tokens: 3000,
+            raw_max_tokens: 10000,
+            percentage: 30,
+            categories: [
+              { name: "System prompt", tokens: 2000, kind: "used" },
+              { name: "Messages", tokens: 1000, kind: "used" },
+              { name: "Free space", tokens: 7000, kind: "free" },
+            ],
+            mcp_tools: [{ name: "mcp__docs__search", server_name: "docs", tokens: 300 }],
+            memory_files: [{ path: "/w/AGENTS.md", type: "Project", tokens: 200 }],
+            agents: [],
+          },
+        });
+        await say("## Context Usage");
+        return { stopReason: "end_turn" };
+      }
       case "updates":
         await say("hello ");
         await say("world");

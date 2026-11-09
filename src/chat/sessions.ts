@@ -20,6 +20,7 @@ import { resetConversation, type Reopen, type RunningAgent, type Tab, type TabLi
 import { TurnTraces } from "./turnTraces";
 import type { TabTurns } from "./turns";
 import type { TabUsage } from "./usage";
+import type { TabContext } from "./contextBreakdown";
 import type { TabWorktrees } from "./worktrees";
 
 /** No agent installed or configured yet. */
@@ -32,6 +33,7 @@ export interface SessionsHost extends ChatUi {
   readonly permissions: Permissions<Tab>;
   readonly changes: ChangeReview;
   readonly usage: TabUsage;
+  readonly contextWindow: TabContext;
   readonly tabWorktrees: TabWorktrees;
   readonly turns: TabTurns;
   selectTab(
@@ -90,6 +92,7 @@ export class TabSessions {
         this.host.setConfigOptions(tab, configOptions);
         this.host.postTabs();
         this.host.postTab(tab, { type: "session", sessionId: res.sessionId, configOptions });
+        this.host.contextWindow.post(tab);
         this.host.status(tab, "chat.ready");
         return res.sessionId;
       }),
@@ -217,6 +220,7 @@ export class TabSessions {
     const configOptions = yield* this.restoreOptions(tab, running, { sessionId, configOptions: res.configOptions });
     this.host.setConfigOptions(tab, configOptions);
     this.host.postTab(tab, { type: "session", sessionId, configOptions });
+    this.host.contextWindow.post(tab);
     this.host.usage.postSaved(tab);
     this.host.status(tab, "chat.ready");
     // Messages sent while the session loaded.
@@ -479,6 +483,7 @@ export class TabSessions {
     this.host.postTab(fork, { type: "forked", from: tab.id });
     this.host.setConfigOptions(fork, res.configOptions);
     this.host.postTab(fork, { type: "session", sessionId: res.sessionId, configOptions: res.configOptions });
+    this.host.contextWindow.post(fork);
     this.host.usage.postSaved(fork);
     this.host.changes.postIfTracked(fork);
     this.host.status(fork, "chat.ready");

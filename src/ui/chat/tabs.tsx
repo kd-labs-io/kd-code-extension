@@ -12,6 +12,7 @@ import type {
   TerminalSnapshot,
   WorktreeDiff,
 } from "../../chat/protocol";
+import type { ContextBreakdown } from "../../chat/contextBreakdown";
 import type { Totals } from "../../usageLedger";
 import { Icon } from "../icon";
 import { useL10n } from "../l10n";
@@ -82,6 +83,12 @@ export interface TabState {
   compactAt?: number;
   /** Tokens, cost and turns recorded for the session ("sessionTotals"). */
   totals?: Totals;
+  /** What fills the context window, as far as the host knows ("contextBreakdown"). */
+  context?: ContextBreakdown;
+  /** The agent is measuring it. */
+  measuringContext?: boolean;
+  /** `usage.used` (null: none) when it was last asked to be measured: once that changes, the measurement is old. */
+  measuredUsed?: number | null;
   status: Status;
   attachments: Attachment[];
   /** Slash commands the agent offers in this session. */

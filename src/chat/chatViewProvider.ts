@@ -38,6 +38,7 @@ import { TabAgents } from "./tabAgents";
 import { TabList, type Tab } from "./tabs";
 import { TabTurns } from "./turns";
 import { TabUsage } from "./usage";
+import { TabContext } from "./contextBreakdown";
 import { TabWorktrees } from "./worktrees";
 import { defaultCwd, workspaceFolders } from "../workspace";
 import { showDiagram } from "../diagramPanel";
@@ -119,6 +120,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     run: (effect, tab) => this.run(effect, tab),
   };
   private readonly usage = new TabUsage(this.ui);
+  private readonly contextWindow = new TabContext({ ...this.ui, sendQueued: (tab) => this.turns.sendQueued(tab) });
   private readonly backgroundTasks = new TabBackgroundTasks({
     postTab: (tab, message) => this.postTab(tab, message),
     changed: () => this.indicators.update(),
@@ -221,6 +223,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
       tabs: this.tabs,
       changes: this.changes,
       usage: this.usage,
+      contextWindow: this.contextWindow,
       tabWorktrees: this.tabWorktrees,
     };
     this.turns = new TabTurns(
@@ -538,6 +541,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         for (const each of this.tabs.all) {
           this.refreshStatus(each);
           this.usage.postSaved(each);
+          this.contextWindow.post(each);
           this.changes.postIfTracked(each);
           if (each.queue.length > 0) {
             this.turns.postQueue(each);
@@ -744,6 +748,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         break;
       case "stopBackgroundTask":
         yield* this.backgroundTasks.stop(tab, msg.id);
+        break;
+      case "measureContext":
+        yield* this.contextWindow.measure(tab);
         break;
       default:
         yield* this.changes.onMessage(tab, msg);

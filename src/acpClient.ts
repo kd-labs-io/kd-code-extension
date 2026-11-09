@@ -12,6 +12,7 @@ import {
   asyncTaskUpdateOf,
   type AsyncTaskUpdate,
 } from "./asyncTasks";
+import { CONTEXT_USAGE_SESSION_META, contextUsageOf, measuresContext, type ContextUsage } from "./claudeContext";
 import { t } from "./i18n";
 import { makeAgentTerminals, type TerminalNotFoundError, type TerminalSnapshot } from "./agentTerminals";
 import { writeFile } from "./fileChanges";
@@ -50,6 +51,8 @@ export interface AgentHandlers {
   onFileWritten?(sessionId: string, path: string): void;
   /** Work of a session started, changed or ended in the background. Without it the client offers no async tasks. */
   onAsyncTask?(sessionId: string, update: AsyncTaskUpdate): void;
+  /** The agent measured what fills a session's context window (Claude's `/context`). */
+  onContextUsage?(sessionId: string, usage: ContextUsage): void;
 }
 
 export interface AgentCommand {
@@ -88,6 +91,10 @@ export interface AcpAgent {
   readonly authMethods: ReadonlyArray<acp.AuthMethod>;
   /** Completes when the process exits on its own (not when its Scope closes). */
   readonly exited: Effect.Effect<AgentExit>;
+  /** Whether `/context` reports what fills a session's context window to "onContextUsage". */
+  readonly measuresContext: boolean;
+  /** The names of the MCP servers the client gave the session. */
+  mcpServerNames(sessionId: string): ReadonlyArray<string>;
   newSession(cwd: string): Effect.Effect<acp.NewSessionResponse, RequestError>;
   /** Needs `sessionCapabilities.list`. */
   listSessions(cwd: string, cursor?: string): Effect.Effect<acp.ListSessionsResponse, RequestError>;
@@ -117,21 +124,29 @@ export interface AcpAgent {
   stopAsyncTask(sessionId: string, asyncTaskId: string): Effect.Effect<void, RequestError>;
 }
 
-/** The same stream, with the async task updates taken off it and given to `onAsyncTask`. */
-function takeAsyncTasks<M>(
+/**
+ * The same stream, with the messages ACP v1 doesn't know taken off it before the SDK would reject them: async task
+ * updates go to `onAsyncTask`, Claude SDK messages to `onContextUsage` (the `/context` answers among them).
+ */
+function takeExtensions<M>(
   stream: { readable: ReadableStream<M>; writable: WritableStream<M> },
-  onAsyncTask: (sessionId: string, update: AsyncTaskUpdate) => void,
+  { onAsyncTask, onContextUsage }: Pick<AgentHandlers, "onAsyncTask" | "onContextUsage">,
 ) {
   return {
     readable: stream.readable.pipeThrough(
       new TransformStream<M, M>({
         transform(message, controller) {
-          const task = asyncTaskUpdateOf(message);
-          if (task === undefined) {
-            controller.enqueue(message);
-          } else if (task !== "drop") {
-            onAsyncTask(task.sessionId, task.update);
+          const task = onAsyncTask && asyncTaskUpdateOf(message);
+          if (task) {
+            if (task !== "drop") onAsyncTask(task.sessionId, task.update);
+            return;
           }
+          const context = contextUsageOf(message);
+          if (context) {
+            if (context !== "drop") onContextUsage?.(context.sessionId, context.usage);
+            return;
+          }
+          controller.enqueue(message);
         },
       }),
     ),
@@ -178,11 +193,20 @@ export const spawnAgent = Effect.fn("spawnAgent")(function* (
   const exited = yield* Deferred.make<AgentExit>();
   /** The folder of each session, for the commands it runs in client terminals. */
   const sessionCwds = new Map<string, string>();
+  /** The MCP servers given to each session. */
+  const sessionServers = new Map<string, ReadonlyArray<string>>();
   const terminals = yield* makeAgentTerminals(
     (snapshot) => handlers.onTerminal?.(snapshot),
     (sessionId) => sessionCwds.get(sessionId),
   );
-  const remember = (sessionId: string, cwd: string) => Effect.sync(() => void sessionCwds.set(sessionId, cwd));
+  const remember = (sessionId: string, cwd: string, servers: ReadonlyArray<acp.McpServer>) =>
+    Effect.sync(() => {
+      sessionCwds.set(sessionId, cwd);
+      sessionServers.set(
+        sessionId,
+        servers.map((server) => server.name),
+      );
+    });
   const modes = new SessionModes();
   const { command, args, env } = agentCommand;
   yield* Effect.logInfo(`[agent] spawn ${command} ${args.join(" ")}`);
@@ -205,8 +229,7 @@ export const spawnAgent = Effect.fn("spawnAgent")(function* (
         ),
         `${path.basename(command)}#${child.pid ?? "?"}`,
       );
-      const { onAsyncTask } = handlers;
-      const stream = onAsyncTask ? takeAsyncTasks(traced, onAsyncTask) : traced;
+      const stream = takeExtensions(traced, handlers);
       const connection = acp
         .client({ name: "kd-code" })
         .onNotification(acp.methods.client.session.update, ({ params }) => handlers.onUpdate(modes.translate(params)))
@@ -317,17 +340,23 @@ export const spawnAgent = Effect.fn("spawnAgent")(function* (
   yield* Effect.logInfo(`[agent] initialized: ${JSON.stringify(initializeResponse.agentInfo ?? {})}`);
   // Read per session, so settings changes apply without restarting the agent.
   const mcpServers = mcpServersFor(initializeResponse.agentCapabilities?.mcpCapabilities);
+  const contextMeasured = handlers.onContextUsage !== undefined && measuresContext(initializeResponse.agentInfo?.name);
+  /** Added to the requests that start or reopen a session. */
+  const sessionMeta = contextMeasured ? { _meta: CONTEXT_USAGE_SESSION_META } : {};
 
   return {
     initializeResponse,
     authMethods: initializeResponse.authMethods ?? [],
     exited: Deferred.await(exited),
+    measuresContext: contextMeasured,
+    mcpServerNames: (sessionId) => sessionServers.get(sessionId) ?? [],
     newSession: (cwd) =>
       mcpServers.pipe(
         Effect.flatMap((mcpServers) =>
-          request("session/new", (agent) => agent.request(acp.methods.agent.session.new, { cwd, mcpServers })),
+          request("session/new", (agent) =>
+            agent.request(acp.methods.agent.session.new, { cwd, mcpServers, ...sessionMeta }),
+          ).pipe(Effect.tap((res) => remember(res.sessionId, cwd, mcpServers))),
         ),
-        Effect.tap((res) => remember(res.sessionId, cwd)),
         Effect.map((res) => modes.adopt(res.sessionId, res)),
       ),
     listSessions: (cwd, cursor) =>
@@ -336,20 +365,18 @@ export const spawnAgent = Effect.fn("spawnAgent")(function* (
       mcpServers.pipe(
         Effect.flatMap((mcpServers) =>
           request("session/load", (agent) =>
-            agent.request(acp.methods.agent.session.load, { sessionId, cwd, mcpServers }),
-          ),
+            agent.request(acp.methods.agent.session.load, { sessionId, cwd, mcpServers, ...sessionMeta }),
+          ).pipe(Effect.tap(() => remember(sessionId, cwd, mcpServers))),
         ),
-        Effect.tap(() => remember(sessionId, cwd)),
         Effect.map((res) => modes.adopt(sessionId, res)),
       ),
     resumeSession: (sessionId, cwd) =>
       mcpServers.pipe(
         Effect.flatMap((mcpServers) =>
           request("session/resume", (agent) =>
-            agent.request(acp.methods.agent.session.resume, { sessionId, cwd, mcpServers }),
-          ),
+            agent.request(acp.methods.agent.session.resume, { sessionId, cwd, mcpServers, ...sessionMeta }),
+          ).pipe(Effect.tap(() => remember(sessionId, cwd, mcpServers))),
         ),
-        Effect.tap(() => remember(sessionId, cwd)),
         Effect.map((res) => modes.adopt(sessionId, res)),
       ),
     forkSession: (sessionId, cwd) =>
@@ -360,10 +387,10 @@ export const spawnAgent = Effect.fn("spawnAgent")(function* (
               sessionId,
               cwd,
               mcpServers,
+              ...sessionMeta,
             }),
-          ),
+          ).pipe(Effect.tap((res) => remember(res.sessionId, cwd, mcpServers))),
         ),
-        Effect.tap((res) => remember(res.sessionId, cwd)),
         Effect.map((res) => modes.adopt(res.sessionId, res)),
       ),
     closeSession: (sessionId) =>
@@ -371,6 +398,7 @@ export const spawnAgent = Effect.fn("spawnAgent")(function* (
         Effect.tap(() =>
           Effect.sync(() => {
             sessionCwds.delete(sessionId);
+            sessionServers.delete(sessionId);
             modes.forget(sessionId);
           }),
         ),

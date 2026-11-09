@@ -1,5 +1,7 @@
 import type * as acp from "@agentclientprotocol/sdk";
+import type { ContextBreakdown } from "../../chat/contextBreakdown";
 import type { Totals } from "../../usageLedger";
+import { ContextBreakdownView } from "./contextBreakdown";
 import { useL10n } from "../l10n";
 import { post } from "./post";
 
@@ -12,6 +14,8 @@ export interface Usage {
 /**
  * `compactAt`: where the agent auto-compacts, when that is before the end of the window.
  * `onCompact`: compacts the conversation; absent when the agent offers no such command.
+ * `context`: what fills the window, as far as it is known. `onMeasure` has the agent measure it; absent when it can't
+ * now. It runs when the panel opens and `contextStale`.
  */
 export function UsageMeter({
   usage,
@@ -19,12 +23,20 @@ export function UsageMeter({
   totals,
   busy,
   onCompact,
+  context,
+  measuring,
+  contextStale,
+  onMeasure,
 }: {
   usage: Usage | undefined;
   compactAt: number | undefined;
   totals: Totals | undefined;
   busy: boolean;
   onCompact: (() => void) | undefined;
+  context: ContextBreakdown | undefined;
+  measuring: boolean;
+  contextStale: boolean;
+  onMeasure: (() => void) | undefined;
 }) {
   const { t, lang } = useL10n();
   if (!usage) return <span id="usage" hidden />;
@@ -49,11 +61,17 @@ export function UsageMeter({
   if (totals?.turns) rows.push([t("chat.sessionTurns"), exact.format(totals.turns)]);
   // A ring of radius 7 in a 16×16 box; the dash covers `ratio` of the circumference.
   const circumference = 2 * Math.PI * 7;
+  const opened = () => {
+    if (contextStale && !measuring) onMeasure?.();
+  };
+  const measured = !!context?.categories.length;
   return (
     <span
       id="usage"
       onClick={() => post({ type: "showUsage" })}
       data-level={ratio >= 0.9 ? "high" : ratio >= 0.7 ? "medium" : "low"}
+      onMouseEnter={opened}
+      onFocus={opened}
     >
       {/* Focusable so the panel also opens from the keyboard. */}
       <span
@@ -81,15 +99,23 @@ export function UsageMeter({
           <span>{t("chat.contextWindow")}</span>
           <span>{summary}</span>
         </span>
-        <span className="usage-bar">
-          <span style={{ width: `${percent}%` }} />
-        </span>
+        {!measured && (
+          <span className="usage-bar">
+            <span style={{ width: `${percent}%` }} />
+          </span>
+        )}
         {rows.map(([label, value]) => (
           <span key={label} className="usage-row">
             <span>{label}</span>
             <span>{value}</span>
           </span>
         ))}
+        {context && (
+          // On a wrapper: opening a group or measuring must not open the summary.
+          <span className="usage-context" onClick={(e) => e.stopPropagation()}>
+            <ContextBreakdownView breakdown={context} measuring={measuring} onMeasure={onMeasure} />
+          </span>
+        )}
         <span className="usage-hint">{t("chat.showUsage")}</span>
         {onCompact && (
           // On the wrapper: a click on a disabled button must not open the summary either.

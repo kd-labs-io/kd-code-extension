@@ -16,6 +16,7 @@ import type { ChatUi } from "./host";
 import { CANCELLED, ELICITATION_CANCELLED, parseElicitationUrl, type Permissions } from "./permissions";
 import { canReopen } from "./history";
 import type { TabBackgroundTasks } from "./backgroundTasks";
+import type { TabContext } from "./contextBreakdown";
 import { replayedParts } from "./replay";
 import { NoAgentError, type TabSessions } from "./sessions";
 import { detachSession, resetConversation, type RunningAgent, type Tab, type TabList } from "./tabs";
@@ -40,6 +41,7 @@ export interface AgentsHost extends ChatUi {
   readonly turns: TabTurns;
   readonly sessions: TabSessions;
   readonly backgroundTasks: TabBackgroundTasks;
+  readonly contextWindow: TabContext;
   post(message: unknown): void;
 }
 
@@ -170,6 +172,12 @@ export class TabAgents {
           this.host.backgroundTasks.onUpdate(tab, sessionId, update);
         }
       },
+      onContextUsage: (sessionId, usage) => {
+        const tab = tabFor(sessionId);
+        if (tab) {
+          this.host.contextWindow.onUsage(tab, sessionId, usage);
+        }
+      },
       onFileWritten: (sessionId, file) => {
         const tab = tabFor(sessionId);
         if (tab) {
@@ -241,6 +249,10 @@ export class TabAgents {
 
   private onSessionUpdate(tab: Tab, n: acp.SessionNotification): void {
     const { update } = n;
+    // The measurement's table: the breakdown shows it.
+    if (tab.measuringContext && update.sessionUpdate === "agent_message_chunk") {
+      return;
+    }
     tab.turnStats?.onUpdate(update);
     if (tab.reply) {
       if (update.sessionUpdate === "agent_message_chunk" && update.content.type === "text") {
@@ -256,6 +268,10 @@ export class TabAgents {
     this.host.postTab(tab, { type: "update", update, turn: this.replayTurn(tab, update) });
     if (update.sessionUpdate === "config_option_update") {
       this.host.setConfigOptions(tab, update.configOptions);
+    }
+    if (update.sessionUpdate === "available_commands_update") {
+      tab.commands = update.availableCommands.map((command) => command.name);
+      this.host.contextWindow.post(tab);
     }
     if (update.sessionUpdate === "tool_call" || update.sessionUpdate === "tool_call_update") {
       this.host.follower.toolCall(tab, update);

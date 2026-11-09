@@ -5,6 +5,7 @@ import { canFork, type AcpAgent } from "../acpClient";
 import { ChangeSet, SavedChanges } from "../fileChanges";
 import type { MessageKey } from "../i18n";
 import { isManaged, TabWorktree, WorktreeSettled } from "../worktrees";
+import type { ContextBreakdown } from "./contextBreakdown";
 import { SavedDraft, type DraftHolder } from "./drafts";
 import type { Attempt, PromptPart, TabGroupInfo, TabInfo } from "./protocol";
 import { TurnTraces } from "./turnTraces";
@@ -120,6 +121,12 @@ export interface Tab extends DraftHolder {
   running?: RunningAgent;
   /** The session's config options as the agent last reported them; the status bar shows the model. */
   configOptions?: ReadonlyArray<acp.SessionConfigOption>;
+  /** The names of the slash commands the session's agent last offered. */
+  commands?: ReadonlyArray<string>;
+  /** Set while the agent measures the session's context window; the answer's table stays out of the conversation. */
+  measuringContext?: boolean;
+  /** What filled the context window of session `sessionId` when the agent last measured it. */
+  context?: { readonly sessionId: string; readonly breakdown: ContextBreakdown };
   /** The folder the tab's session runs in: picked for the tab, or the one of the session it opened. */
   cwd: string;
   /** The git worktree `cwd` is in, when the tab has one of its own. */
@@ -197,6 +204,7 @@ export function detachSession(tab: Tab): void {
   tab.sessionId = undefined;
   tab.running = undefined;
   tab.configOptions = undefined;
+  tab.commands = undefined;
   tab.busy = false;
   tab.steer = false;
 }
@@ -206,6 +214,7 @@ export function resetConversation(tab: Tab): void {
   tab.sessionId = undefined;
   tab.running = undefined;
   tab.configOptions = undefined;
+  tab.commands = undefined;
   tab.busy = false;
   tab.used = false;
   tab.title = undefined;

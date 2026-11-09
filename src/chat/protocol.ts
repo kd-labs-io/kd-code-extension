@@ -137,6 +137,8 @@ export type FromWebview =
   | { type: "killTerminal"; tab: number; terminalId: string }
   /** Stops one of the tab's background tasks ("backgroundTasks"); the turn, if one runs, goes on. */
   | { type: "stopBackgroundTask"; tab: number; id: string }
+  /** Has the agent measure what fills the tab's context window; answered with "contextBreakdown". */
+  | { type: "measureContext"; tab: number }
   /**
    * Opens a diff of what the agent changed in `path`; the tool call's texts are used when the change was not
    * written through the client. `line` is 1-based.

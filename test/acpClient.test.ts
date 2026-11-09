@@ -13,6 +13,7 @@ import {
   throwawaySession,
   type UrlElicitation,
 } from "../src/acpClient";
+import type { ContextUsage } from "../src/claudeContext";
 import { __test, Uri, workspace } from "./stubs/vscode";
 import { makeExtensionCtx, makeOutput, type OutputStub, stubLayer } from "./helpers";
 
@@ -496,6 +497,44 @@ describe("spawnAgent", () => {
         });
       }),
     );
+  });
+
+  it.live("asks a Claude agent for its SDK messages, and passes on its context measurements", () => {
+    const rec = recorder(() => ({ outcome: { outcome: "cancelled" } }));
+    const measured: Array<{ sessionId: string; usage: ContextUsage }> = [];
+    const handlers: AgentHandlers = {
+      ...rec.handlers,
+      onContextUsage: (sessionId, usage) => void measured.push({ sessionId, usage }),
+    };
+    const env = { MOCK_AGENT_NAME: "@agentclientprotocol/claude-agent-acp" };
+    return Effect.gen(function* () {
+      yield* withAgent(env, { ...rec, handlers }, (agent) =>
+        Effect.gen(function* () {
+          assert.isTrue(agent.measuresContext);
+          const session = yield* agent.newSession("/w");
+          assert.deepStrictEqual((session._meta as { meta: unknown }).meta, {
+            claudeCode: { emitRawSDKMessages: [{ type: "assistant" }] },
+          });
+          assert.deepStrictEqual(agent.mcpServerNames(session.sessionId), []);
+          yield* agent.prompt(session.sessionId, text("/context"));
+          // The other SDK message is dropped; the table still comes as a message chunk.
+          assert.strictEqual(messageText(rec), "## Context Usage");
+          assert.deepStrictEqual(
+            measured.map(({ sessionId, usage }) => [sessionId, usage.total_tokens, usage.categories.length]),
+            [[session.sessionId, 3000, 3]],
+          );
+        }),
+      );
+      // Another agent isn't asked, nor is one the client takes no measurements from.
+      yield* withAgent({}, { ...rec, handlers }, (agent) =>
+        Effect.gen(function* () {
+          assert.isFalse(agent.measuresContext);
+          const session = yield* agent.newSession("/w");
+          assert.isUndefined((session._meta as { meta: unknown }).meta);
+        }),
+      );
+      yield* withAgent(env, rec, (agent) => Effect.sync(() => assert.isFalse(agent.measuresContext)));
+    });
   });
 
   it.live("answers a read of a missing file with an error to the agent", () => {

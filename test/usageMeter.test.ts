@@ -2,6 +2,7 @@
 import { afterEach, assert, beforeEach, describe, it } from "@effect/vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import type { ContextBreakdown } from "../src/chat/contextBreakdown";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -13,10 +14,27 @@ const posted: Array<unknown> = [];
 });
 const { UsageMeter } = await import("../src/ui/chat/usageMeter");
 
+const measured: ContextBreakdown = {
+  measuredAt: Date.now(),
+  model: "claude",
+  categories: [
+    { name: "System prompt", tokens: 2000, kind: "used" },
+    { name: "Free space", tokens: 8000, kind: "free" },
+  ],
+  groups: [{ kind: "mcpServers", items: [{ name: "docs", tokens: 300, tools: 2 }] }],
+  measurable: true,
+};
+
 describe("UsageMeter", () => {
   let container: HTMLElement;
   let root: Root;
-  const draw = (props: { busy?: boolean; onCompact?: () => void }) =>
+  const draw = (props: {
+    busy?: boolean;
+    onCompact?: () => void;
+    context?: ContextBreakdown;
+    contextStale?: boolean;
+    onMeasure?: () => void;
+  }) =>
     act(() =>
       root.render(
         createElement(UsageMeter, {
@@ -25,6 +43,10 @@ describe("UsageMeter", () => {
           totals: undefined,
           busy: props.busy ?? false,
           onCompact: props.onCompact,
+          context: props.context,
+          measuring: false,
+          contextStale: props.contextStale ?? false,
+          onMeasure: props.onMeasure,
         }),
       ),
     );
@@ -71,5 +93,39 @@ describe("UsageMeter", () => {
     act(() => void ring.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     act(() => (container.querySelector(".usage-hint") as HTMLElement).click());
     assert.deepStrictEqual(posted, [{ type: "showUsage" }, { type: "showUsage" }, { type: "showUsage" }]);
+  });
+
+  it("shows what fills the window, and measures it again on opening once it is old", () => {
+    let measures = 0;
+    draw({ context: measured, contextStale: false, onMeasure: () => measures++ });
+    const rows = [...container.querySelectorAll(".context-row .context-name")].map((el) => el.textContent);
+    assert.deepStrictEqual(rows, ["System prompt", "Free space"]);
+    assert.include(container.querySelector(".context-group")!.textContent, "docs");
+    const usage = container.querySelector("#usage") as HTMLElement;
+    act(() => void usage.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
+    assert.strictEqual(measures, 0);
+    draw({ context: measured, contextStale: true, onMeasure: () => measures++ });
+    act(() => void usage.dispatchEvent(new MouseEvent("mouseout", { bubbles: true })));
+    act(() => void usage.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
+    assert.strictEqual(measures, 1);
+  });
+
+  it("measures again from its button, without opening the usage summary", () => {
+    let measures = 0;
+    draw({ context: measured, onMeasure: () => measures++ });
+    act(() => (container.querySelector(".context-footer button") as HTMLButtonElement).click());
+    act(() => (container.querySelector(".context-group summary") as HTMLElement).click());
+    assert.strictEqual(measures, 1);
+    assert.deepStrictEqual(posted, []);
+  });
+
+  it("lists the servers of an agent that can't measure, without a button", () => {
+    draw({
+      context: { categories: [], groups: [{ kind: "mcpServers", items: [{ name: "docs" }] }], measurable: false },
+    });
+    assert.isNull(container.querySelector(".context-footer"));
+    assert.isNull(container.querySelector(".context-bar"));
+    assert.isNotNull(container.querySelector(".usage-bar"));
+    assert.include(container.querySelector(".context-group")!.textContent, "docs");
   });
 });
