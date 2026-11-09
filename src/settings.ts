@@ -71,6 +71,19 @@ export const SessionDefaults = Schema.Struct({
 });
 export type SessionDefaults = typeof SessionDefaults.Type;
 
+/** kdCode.telemetry: where agents send OpenTelemetry; what is left out keeps the defaults of `telemetry.ts`. */
+export const TelemetrySettings = Schema.Struct({
+  enabled: Schema.optional(Schema.Boolean),
+  /** Base URL of an OTLP receiver. */
+  endpoint: Schema.optional(Schema.String),
+  protocol: Schema.optional(Schema.Literals(["http/protobuf", "http/json", "grpc"])),
+  /** Also send what the user writes and what the agent answers. */
+  logPrompts: Schema.optional(Schema.Boolean),
+  /** Also send the tools' input, such as commands and file paths. */
+  logToolDetails: Schema.optional(Schema.Boolean),
+});
+export type TelemetrySettings = typeof TelemetrySettings.Type;
+
 /** A font size in pixels, where 0 means VS Code's own. */
 const FontSize = Schema.Finite.check(Schema.isBetween({ minimum: 0, maximum: 32 }));
 
@@ -101,6 +114,7 @@ export const Settings = Schema.Struct({
   codeFontSize: FontSize,
   /** Show each turn's numbers in the chat and log the messages exchanged with agents, for advanced users. */
   tracing: Schema.Boolean,
+  telemetry: TelemetrySettings,
   /** Show a notification when a tab the user isn't looking at finishes or asks for permission. */
   notifications: Schema.Boolean,
   /** Among those notifications, also show the one for a tab that finished. */
@@ -149,6 +163,7 @@ export const SETTING_KEYS = [
   "fontSize",
   "codeFontSize",
   "tracing",
+  "telemetry",
   "notifications",
   "notifyFinished",
   "sessionDefaults",
@@ -185,6 +200,7 @@ const DEFAULTS: Settings = {
   fontSize: 0,
   codeFontSize: 0,
   tracing: false,
+  telemetry: {},
   notifications: true,
   notifyFinished: true,
   sessionDefaults: {},
@@ -230,6 +246,7 @@ export function readSettings(): Settings {
     fontSize: read("fontSize"),
     codeFontSize: read("codeFontSize"),
     tracing: read("tracing"),
+    telemetry: read("telemetry"),
     notifications: read("notifications"),
     notifyFinished: read("notifyFinished"),
     sessionDefaults: read("sessionDefaults"),
@@ -262,6 +279,7 @@ export const USER_ONLY_SETTINGS: ReadonlyArray<SettingKey> = [
   "mcpServers",
   "allowedHttpHosts",
   "autoApprove",
+  "telemetry",
 ];
 
 /** Settings that mean something only for a project. */

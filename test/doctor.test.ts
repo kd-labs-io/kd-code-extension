@@ -18,7 +18,7 @@ import {
 import { makeRuntime } from "../src/runtime";
 import { SettingsPanel } from "../src/settingsPanel";
 import type * as vscode from "vscode";
-import { makeOutput, stubLayer } from "./helpers";
+import { makeOutput, makeSecrets, stubLayer } from "./helpers";
 import { __test, commands, Uri } from "./stubs/vscode";
 
 const MOCK_AGENT = fileURLToPath(new URL("./fixtures/mock-agent.mjs", import.meta.url));
@@ -363,6 +363,7 @@ describe("the Doctor tab of the settings page", () => {
           globalStorageUri: Uri.file(path.join(root, "global")),
           workspaceState: memento,
           globalState: memento,
+          secrets: makeSecrets(),
           extension: { id: "test.kd-code", packageJSON: { version: "1.2.3" } },
         } as unknown as vscode.ExtensionContext;
         const runtime = makeRuntime(context, makeOutput());

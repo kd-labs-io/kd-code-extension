@@ -14,6 +14,7 @@ AGENTS.md
 BACKLOG.md
 **/.DS_Store
 release/**
+tmp/**
 test/**
 vitest.config.mts
 media/**/*.css

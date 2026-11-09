@@ -12,7 +12,7 @@ import { ChatViewProvider } from "../src/chat/chatViewProvider";
 import type { FromWebview, TabGroupInfo, TabInfo } from "../src/chat/protocol";
 import { TabList } from "../src/chat/tabs";
 import { makeRuntime } from "../src/runtime";
-import { makeOutput } from "./helpers";
+import { makeOutput, makeSecrets } from "./helpers";
 import { __test, commands, EventEmitter, Uri, window, workspace } from "./stubs/vscode";
 
 const MOCK_AGENT = fileURLToPath(new URL("./fixtures/mock-agent.mjs", import.meta.url));
@@ -65,6 +65,7 @@ const openChat = Effect.acquireRelease(
       storageUri: Uri.file(path.join(root, "storage")),
       workspaceState: memento(),
       globalState: memento(),
+      secrets: makeSecrets(),
       extension: { packageJSON: { version: "1.2.3" } },
       subscriptions: [],
     } as unknown as vscode.ExtensionContext;

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import type { ApprovalRules, SessionDefaults, SettingKey } from "../../settings";
+import type { ApprovalRules, SessionDefaults, SettingKey, TelemetrySettings } from "../../settings";
+import { useMessages } from "../vscode";
 import { Icon } from "../icon";
 import { useL10n, type MessageKey, type Translate } from "../l10n";
 import type { DoctorState } from "../../doctor";
@@ -10,6 +11,7 @@ import { parseHosts } from "./hosts";
 import { formatPairs, parsePairs } from "./pairs";
 import { post, set } from "./post";
 import { stringOf, type LoadedOptions, type State } from "./state";
+import { DEFAULT_ENDPOINT, isEndpoint, TELEMETRY_PROTOCOLS } from "./telemetry";
 import warningIcon from "@tabler/icons/outline/alert-triangle.svg";
 
 const isOverridden = (state: State) => (key: SettingKey) => state.overridden.includes(key);
@@ -344,6 +346,149 @@ function TracingSection({ state }: { state: State }) {
   );
 }
 
+/** Where agents send OpenTelemetry: kdCode.telemetry, and the headers kept in the secret storage. */
+function TelemetrySection({ state }: { state: State }) {
+  const { t } = useL10n();
+  const [endpointError, setEndpointError] = useState<string>();
+  const [check, setCheck] = useState<{ ok?: boolean; message?: string; running?: boolean }>({});
+  useMessages((msg) => {
+    if (msg.type === "telemetryCheck") setCheck({ ok: msg.ok, message: msg.message });
+  });
+  const value = (state.values.telemetry ?? {}) as TelemetrySettings;
+  const locked = isLocked(state)("telemetry");
+  const update = (patch: Partial<TelemetrySettings>) => {
+    setCheck({});
+    set("telemetry", { ...value, ...patch });
+  };
+  const headers = state.telemetryHeaders ?? [];
+  const enabled = value.enabled === true;
+  return (
+    <>
+      <section className="card">
+        <Field
+          id="telemetry-enabled"
+          label="settings.telemetryEnabled"
+          desc="settings.telemetryEnabledDesc"
+          locked={locked}
+          inline
+        >
+          <Toggle id="telemetry-enabled" checked={enabled} onChange={(checked) => update({ enabled: checked })} />
+        </Field>
+        <Field
+          id="telemetry-endpoint"
+          label="settings.telemetryEndpoint"
+          desc="settings.telemetryEndpointDesc"
+          locked={locked}
+          error={endpointError}
+        >
+          <Text
+            id="telemetry-endpoint"
+            placeholder={DEFAULT_ENDPOINT}
+            value={value.endpoint ?? ""}
+            onReset={() => setEndpointError(undefined)}
+            onCommit={(text) => {
+              const endpoint = text.trim();
+              if (!isEndpoint(endpoint)) {
+                setEndpointError(t("settings.telemetryEndpointInvalid"));
+                return;
+              }
+              setEndpointError(undefined);
+              const { endpoint: _, ...rest } = value;
+              setCheck({});
+              set("telemetry", endpoint ? { ...rest, endpoint } : rest);
+            }}
+          />
+        </Field>
+        <Field
+          id="telemetry-protocol"
+          label="settings.telemetryProtocol"
+          desc="settings.telemetryProtocolDesc"
+          locked={locked}
+        >
+          <Segmented
+            id="telemetry-protocol"
+            value={value.protocol ?? "http/protobuf"}
+            options={TELEMETRY_PROTOCOLS.map((protocol) => ({ value: protocol, label: protocol }))}
+            onChange={(protocol) => update({ protocol: protocol as TelemetrySettings["protocol"] })}
+          />
+        </Field>
+        <Field
+          id="telemetry-headers"
+          label="settings.telemetryHeaders"
+          desc="settings.telemetryHeadersDesc"
+          locked={locked}
+        >
+          <div className="row">
+            <span className="desc">
+              {headers.length
+                ? t("settings.telemetryHeadersSaved", headers.join(", "))
+                : t("settings.telemetryHeadersNone")}
+            </span>
+            <button className="secondary" onClick={() => post({ type: "telemetryHeaders" })}>
+              {headers.length ? t("settings.telemetryHeadersChange") : t("settings.telemetryHeadersSet")}
+            </button>
+            {headers.length > 0 && (
+              <button className="secondary" onClick={() => post({ type: "telemetryClearHeaders" })}>
+                {t("settings.telemetryHeadersClear")}
+              </button>
+            )}
+          </div>
+        </Field>
+        <Field
+          id="telemetry-logPrompts"
+          label="settings.telemetryLogPrompts"
+          desc="settings.telemetryLogPromptsDesc"
+          locked={locked}
+          inline
+        >
+          <Toggle
+            id="telemetry-logPrompts"
+            checked={value.logPrompts === true}
+            onChange={(checked) => update({ logPrompts: checked })}
+          />
+        </Field>
+        <Field
+          id="telemetry-logToolDetails"
+          label="settings.telemetryLogToolDetails"
+          desc="settings.telemetryLogToolDetailsDesc"
+          locked={locked}
+          inline
+        >
+          <Toggle
+            id="telemetry-logToolDetails"
+            checked={value.logToolDetails === true}
+            onChange={(checked) => update({ logToolDetails: checked })}
+          />
+        </Field>
+        <div className="field">
+          <div className="row">
+            <button
+              className="secondary"
+              disabled={check.running}
+              onClick={() => {
+                setCheck({ running: true });
+                post({ type: "telemetryCheck" });
+              }}
+            >
+              {t("settings.telemetryCheck")}
+            </button>
+            {check.message && (
+              <span className={`note ${check.ok ? "success" : "error"}`} role="status">
+                {check.message}
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+      <div className="note muted">{t("settings.telemetryRestartNote")}</div>
+      <div className="note warning">
+        <Icon svg={warningIcon} />
+        {t("settings.telemetryPrivacy")}
+      </div>
+    </>
+  );
+}
+
 /** The hosts links from agents may reach over plain http, on the Permissions tab. */
 export function AllowedHostsCard({ state }: { state: State }) {
   const { t } = useL10n();
@@ -448,6 +593,9 @@ export function DebugTab(props: { state: State; doctor: DoctorState }) {
       </PanelSection>
       <PanelSection title="settings.tracing" desc="settings.tracingTabDesc">
         <TracingSection state={props.state} />
+      </PanelSection>
+      <PanelSection title="settings.telemetry" desc="settings.telemetryDesc">
+        <TelemetrySection state={props.state} />
       </PanelSection>
     </>
   );

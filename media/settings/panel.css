@@ -118,6 +118,9 @@ fieldset:disabled select {
 .note.error {
   color: var(--vscode-errorForeground);
 }
+.note.success {
+  color: var(--vscode-testing-iconPassed);
+}
 .note.warning {
   color: var(--vscode-editorWarning-foreground);
 }

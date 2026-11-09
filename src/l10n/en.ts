@@ -376,6 +376,42 @@ const en = {
     "Show each turn's stop reason, duration, tokens, cost and context in the chat, and log every ACP message in the KD Code Trace output channel.",
   "settings.tracingPrivacy":
     "The log can contain file contents, tool input and output: env and header values and fields named like secrets are masked, but other secrets may remain, and VS Code keeps output channels in its log folder.",
+  "settings.telemetry": "OpenTelemetry",
+  "settings.telemetryDesc": "Send the agents' traces, metrics and logs to an OTLP endpoint, such as a local collector.",
+  "settings.telemetryEnabled": "Send OpenTelemetry",
+  "settings.telemetryEnabledDesc":
+    "Start agents with the OTEL_* variables that point them at the endpoint below. Claude Code also gets CLAUDE_CODE_ENABLE_TELEMETRY. Agents without OpenTelemetry ignore them.",
+  "settings.telemetryEndpoint": "Endpoint",
+  "settings.telemetryEndpointDesc": "Base URL of the OTLP receiver: usually port 4318 for HTTP and 4317 for gRPC.",
+  "settings.telemetryEndpointInvalid": "Enter an http:// or https:// URL.",
+  "settings.telemetryProtocol": "Protocol",
+  "settings.telemetryProtocolDesc": "The OTLP protocol the agents use to send.",
+  "settings.telemetryHeaders": "Headers",
+  "settings.telemetryHeadersDesc":
+    "Sent with every export, such as an API key. Kept in VS Code's secret storage, not in settings.json.",
+  "settings.telemetryHeadersSaved": "Saved: {0}",
+  "settings.telemetryHeadersNone": "No headers",
+  "settings.telemetryHeadersSet": "Set headers…",
+  "settings.telemetryHeadersChange": "Change…",
+  "settings.telemetryHeadersClear": "Remove",
+  "settings.telemetryLogPrompts": "Include prompts and answers",
+  "settings.telemetryLogPromptsDesc":
+    "Send what you write and what the agents answer. Off, agents that support it send them redacted.",
+  "settings.telemetryLogToolDetails": "Include tool input",
+  "settings.telemetryLogToolDetailsDesc": "Send the input of the tools agents run, such as commands and file paths.",
+  "settings.telemetryCheck": "Check connection",
+  "settings.telemetryRestartNote":
+    "Applies to agents started afterwards: open a new chat tab, or restart the agent, to use new settings.",
+  "settings.telemetryPrivacy":
+    "Telemetry can contain your account's email and IDs, file paths, and with the options above, prompts and tool input. Only send it to an endpoint you trust.",
+  "telemetry.headersTitle": "OpenTelemetry headers",
+  "telemetry.headersPrompt": "Headers as name=value pairs separated by commas. Leave empty to remove them.",
+  "telemetry.headersInvalid": "Write each header as name=value, separated by commas.",
+  "telemetry.checkInvalidEndpoint": "The endpoint is not an http:// or https:// URL.",
+  "telemetry.checkOk": "{0} accepted a test export.",
+  "telemetry.checkReachable": "{0} is reachable. A gRPC export itself can't be tested here.",
+  "telemetry.checkStatus": "{0} answered with HTTP {1}.",
+  "telemetry.checkFailed": "Couldn't reach {0}: {1}",
   "settings.showChanges": "Show changed files",
   "settings.showChangesDesc":
     "Show the bar above the message box that lists the files the agent changed, with Undo all and Keep all, and Keep and Undo above each change in the editor.",

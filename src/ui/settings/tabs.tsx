@@ -87,7 +87,7 @@ export const TABS: ReadonlyArray<{ id: Tab; label: MessageKey; desc: MessageKey;
   },
   { id: "mcp", label: "settings.mcp", desc: "settings.mcpDesc", icon: plugIcon, keys: ["mcpServers"] },
   { id: "usage", label: "settings.usage", desc: "settings.usageDesc", icon: chartIcon, keys: [] },
-  { id: "debug", label: "settings.debug", desc: "settings.debugDesc", icon: bugIcon, keys: ["tracing"] },
+  { id: "debug", label: "settings.debug", desc: "settings.debugDesc", icon: bugIcon, keys: ["tracing", "telemetry"] },
 ];
 
 /** Tabs inside a section's panel, for what would be too much on one page. */

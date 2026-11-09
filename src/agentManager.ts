@@ -16,6 +16,7 @@ import {
 import { ExtensionCtx, messageOf, Output, thenable } from "./runtime";
 import { isProviderEnabled, providerPrefs } from "./providers";
 import { CustomAgentEntry, readSettings } from "./settings";
+import { Telemetry } from "./telemetry";
 
 export const InstallKind = Schema.Literals(["npx", "uvx", "binary"]);
 export type InstallKind = typeof InstallKind.Type;
@@ -137,7 +138,7 @@ export class AgentManager extends Context.Service<
     readonly activeId: Effect.Effect<string | undefined>;
     readonly active: Effect.Effect<InstalledAgent | undefined>;
     setActive(id: string | undefined): Effect.Effect<void, InstallError>;
-    /** Command to launch an installed agent, with the user's extra env applied. */
+    /** Command to launch an installed agent, with the telemetry variables and the user's extra env applied. */
     commandFor(agent: InstalledAgent): AgentCommand;
     /** Command for the default agent; undefined when there is none. */
     readonly selectedCommand: Effect.Effect<AgentCommand | undefined>;
@@ -157,6 +158,7 @@ export class AgentManager extends Context.Service<
       const path = yield* Path.Path;
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const http = yield* HttpClient.HttpClient;
+      const telemetry = yield* Telemetry;
       const changed = yield* Effect.acquireRelease(
         Effect.sync(() => new vscode.EventEmitter<void>()),
         (emitter) => Effect.sync(() => emitter.dispose()),
@@ -397,11 +399,12 @@ export class AgentManager extends Context.Service<
         yield* notify;
       });
 
+      // What the user sets wins over telemetry: kdCode.env, then the provider's own env.
       const commandFor = (agent: InstalledAgent): AgentCommand =>
         withPrefs(agent.id, {
           command: agent.command,
           args: agent.args,
-          env: { ...agent.env, ...readSettings().env },
+          env: { ...agent.env, ...telemetry.env(agent.id), ...readSettings().env },
         });
 
       const command = Effect.fn("AgentManager.command")(function* (id: string) {
@@ -414,7 +417,7 @@ export class AgentManager extends Context.Service<
           ? withPrefs(id, {
               command: custom.command.trim(),
               args: custom.args ?? [],
-              env: { ...readSettings().env, ...custom.env },
+              env: { ...telemetry.env(id), ...readSettings().env, ...custom.env },
             })
           : undefined;
       });

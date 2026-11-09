@@ -16,6 +16,7 @@ import { Completions } from "./completions";
 import { Doctor } from "./doctor";
 import { Problems } from "./problems";
 import { AcpRegistry } from "./registry";
+import { Telemetry } from "./telemetry";
 import { TerminalContext } from "./terminalContext";
 import { UsageLedger } from "./usageLedger";
 import { Worktrees } from "./worktrees";
@@ -68,7 +69,7 @@ const appLayer = (context: vscode.ExtensionContext, channel: vscode.OutputChanne
     AcpTrace.layer,
   );
   const services = Layer.mergeAll(
-    AgentManager.layer,
+    AgentManager.layer.pipe(Layer.provideMerge(Telemetry.layer)),
     AutoApprove.layer,
     AcpRegistry.layer,
     ClaudeSettings.layer,

@@ -20,6 +20,7 @@ import {
   type SettingKey,
   type SettingsScope,
 } from "./settings";
+import { parseOtlpHeaders, Telemetry } from "./telemetry";
 import { UsageLedger, type SessionQuery, type UsageSummary } from "./usageLedger";
 import { webviewHtml, webviewRoots } from "./webview";
 
@@ -40,7 +41,12 @@ export type FromWebview =
   /** The ccusage report of a source, run again when `refresh`; answered with a "ccusage" message. */
   | { type: "ccusage"; source: string; refresh: boolean }
   /** Asks an agent (empty: the default one) for its models, and the efforts of `model` (empty: its default one). */
-  | { type: "loadModels"; agentId: string; model: string };
+  | { type: "loadModels"; agentId: string; model: string }
+  /** Asks for the OTLP headers in a password box, and saves them in the secret storage. */
+  | { type: "telemetryHeaders" }
+  | { type: "telemetryClearHeaders" }
+  /** Checks that the OTLP endpoint answers; answered with a "telemetryCheck" message. */
+  | { type: "telemetryCheck" };
 
 /** A session row of the Usage tab: its agent by name and its folder by base name. */
 export type UsageSessionRow = UsageSummary["sessions"][number] & { agentName: string; folder: string };
@@ -229,6 +235,11 @@ export class SettingsPanel {
         Effect.sync(() => this.disposables.push(ledger.onDidChange(() => this.run(this.renderUsage)))),
       ),
     );
+    this.run(
+      Telemetry.use((telemetry) =>
+        Effect.sync(() => this.disposables.push(telemetry.onDidChange(() => this.run(this.render)))),
+      ),
+    );
   }
 
   private get hasWorkspace(): boolean {
@@ -350,6 +361,31 @@ export class SettingsPanel {
         void this.panel.webview.postMessage({ type: "models", agentId: msg.agentId, model: msg.model, ...result });
         break;
       }
+      case "telemetryHeaders": {
+        const value = yield* thenable(() =>
+          vscode.window.showInputBox({
+            title: t("telemetry.headersTitle"),
+            prompt: t("telemetry.headersPrompt"),
+            placeHolder: "authorization=KEY,x-team=abc",
+            password: true,
+            ignoreFocusOut: true,
+            validateInput: (text) =>
+              !text.trim() || parseOtlpHeaders(text) ? undefined : t("telemetry.headersInvalid"),
+          }),
+        );
+        if (value !== undefined) {
+          yield* Telemetry.use((telemetry) => telemetry.setHeaders(value));
+        }
+        break;
+      }
+      case "telemetryClearHeaders":
+        yield* Telemetry.use((telemetry) => telemetry.setHeaders(""));
+        break;
+      case "telemetryCheck": {
+        const result = yield* Telemetry.use((telemetry) => telemetry.check);
+        void this.panel.webview.postMessage({ type: "telemetryCheck", ...result });
+        break;
+      }
       case "openNative":
         yield* thenable(() =>
           vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${this.context.extension.id}`),
@@ -358,7 +394,7 @@ export class SettingsPanel {
     }
   });
 
-  private get render(): Effect.Effect<void, never, AutoApprove> {
+  private get render(): Effect.Effect<void, never, AutoApprove | Telemetry> {
     return Effect.gen({ self: this }, function* () {
       const config = vscode.workspace.getConfiguration("kdCode");
       const values: Record<string, unknown> = {};
@@ -387,6 +423,7 @@ export class SettingsPanel {
         agents: yield* this.manager.agents,
         providers: yield* this.manager.providers,
         activeId: yield* this.manager.activeId,
+        telemetryHeaders: yield* Telemetry.use((telemetry) => telemetry.headerNames),
       });
     });
   }

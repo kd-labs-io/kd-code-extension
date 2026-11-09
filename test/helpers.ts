@@ -22,6 +22,19 @@ export const makeOutput = (): OutputStub => {
   } as OutputStub;
 };
 
+/** An in-memory `ExtensionContext.secrets`. */
+export const makeSecrets = (initial: Record<string, string> = {}) => {
+  const values = new Map(Object.entries(initial));
+  return {
+    values,
+    get: async (key: string) => values.get(key),
+    store: async (key: string, value: string) => void values.set(key, value),
+    delete: async (key: string) => void values.delete(key),
+    keys: async () => [...values.keys()],
+    onDidChange: () => ({ dispose: () => {} }),
+  } as unknown as vscode.SecretStorage & { readonly values: Map<string, string> };
+};
+
 export const makeExtensionCtx = (
   globalStorage = "/tmp/kd-code-test-storage",
   packageJSON: unknown = { version: "1.2.3" },

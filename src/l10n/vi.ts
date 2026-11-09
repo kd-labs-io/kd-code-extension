@@ -378,6 +378,43 @@ const vi: Record<MessageKey, string> = {
     "Hiện lý do dừng, thời lượng, token, chi phí và context của mỗi lượt trong chat, đồng thời ghi mọi message ACP vào output channel KD Code Trace.",
   "settings.tracingPrivacy":
     "Log có thể chứa nội dung file, đầu vào và đầu ra của tool: giá trị env, header và các trường có tên giống secret được che, nhưng secret khác vẫn có thể còn sót, và VS Code lưu output channel trong thư mục log của nó.",
+  "settings.telemetry": "OpenTelemetry",
+  "settings.telemetryDesc":
+    "Gửi trace, metric và log của các agent tới một endpoint OTLP, chẳng hạn một collector chạy trên máy.",
+  "settings.telemetryEnabled": "Gửi OpenTelemetry",
+  "settings.telemetryEnabledDesc":
+    "Khởi động agent với các biến OTEL_* trỏ tới endpoint bên dưới. Claude Code còn được bật thêm CLAUDE_CODE_ENABLE_TELEMETRY. Agent không hỗ trợ OpenTelemetry sẽ bỏ qua các biến này.",
+  "settings.telemetryEndpoint": "Endpoint",
+  "settings.telemetryEndpointDesc": "URL gốc của nơi nhận OTLP: thường là cổng 4318 cho HTTP và 4317 cho gRPC.",
+  "settings.telemetryEndpointInvalid": "Hãy nhập một URL http:// hoặc https://.",
+  "settings.telemetryProtocol": "Giao thức",
+  "settings.telemetryProtocolDesc": "Giao thức OTLP mà agent dùng để gửi.",
+  "settings.telemetryHeaders": "Header",
+  "settings.telemetryHeadersDesc":
+    "Gửi kèm mỗi lần xuất dữ liệu, chẳng hạn API key. Được lưu trong secret storage của VS Code, không nằm trong settings.json.",
+  "settings.telemetryHeadersSaved": "Đã lưu: {0}",
+  "settings.telemetryHeadersNone": "Chưa có header",
+  "settings.telemetryHeadersSet": "Đặt header…",
+  "settings.telemetryHeadersChange": "Đổi…",
+  "settings.telemetryHeadersClear": "Xóa",
+  "settings.telemetryLogPrompts": "Gửi cả prompt và câu trả lời",
+  "settings.telemetryLogPromptsDesc":
+    "Gửi những gì bạn viết và những gì agent trả lời. Khi tắt, các agent hỗ trợ sẽ gửi chúng ở dạng đã che.",
+  "settings.telemetryLogToolDetails": "Gửi cả đầu vào của tool",
+  "settings.telemetryLogToolDetailsDesc": "Gửi đầu vào của các tool mà agent chạy, như lệnh và đường dẫn file.",
+  "settings.telemetryCheck": "Kiểm tra kết nối",
+  "settings.telemetryRestartNote":
+    "Chỉ áp dụng cho các agent khởi động sau đó: mở tab chat mới hoặc khởi động lại agent để dùng thiết lập mới.",
+  "settings.telemetryPrivacy":
+    "Telemetry có thể chứa email và ID tài khoản của bạn, đường dẫn file, và nếu bật các tùy chọn ở trên thì cả prompt và đầu vào của tool. Chỉ gửi tới endpoint bạn tin tưởng.",
+  "telemetry.headersTitle": "Header OpenTelemetry",
+  "telemetry.headersPrompt": "Các header dạng name=value, cách nhau bằng dấu phẩy. Để trống để xóa.",
+  "telemetry.headersInvalid": "Viết mỗi header dạng name=value, cách nhau bằng dấu phẩy.",
+  "telemetry.checkInvalidEndpoint": "Endpoint không phải URL http:// hoặc https://.",
+  "telemetry.checkOk": "{0} đã nhận một lần xuất thử.",
+  "telemetry.checkReachable": "Kết nối được tới {0}. Không thể thử xuất dữ liệu qua gRPC ở đây.",
+  "telemetry.checkStatus": "{0} trả về HTTP {1}.",
+  "telemetry.checkFailed": "Không kết nối được tới {0}: {1}",
   "settings.showChanges": "Hiện file đã thay đổi",
   "settings.showChangesDesc":
     "Hiện thanh phía trên ô nhập tin nhắn liệt kê các file agent đã sửa, kèm nút Hoàn tác tất cả và Giữ tất cả, cùng nút Giữ và Hoàn tác phía trên mỗi thay đổi trong editor.",

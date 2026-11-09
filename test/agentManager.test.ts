@@ -8,7 +8,8 @@ import type * as vscode from "vscode";
 import { AgentManager } from "../src/agentManager";
 import { isPathSegment, Platform, type BinaryTarget, type RegistryAgent } from "../src/registry";
 import { ExtensionCtx, Output } from "../src/runtime";
-import { makeOutput } from "./helpers";
+import { Telemetry } from "../src/telemetry";
+import { makeOutput, makeSecrets } from "./helpers";
 import { __test, window } from "./stubs/vscode";
 
 const CONTENT = "#!/bin/sh\n";
@@ -48,6 +49,7 @@ const makeContext = (storage: string, installed: unknown = {}) => {
   const values = new Map<string, unknown>([["kdCode.installedAgents", installed]]);
   return {
     globalStorageUri: { fsPath: storage },
+    secrets: makeSecrets({ "kdCode.telemetry.headers": "authorization=key" }),
     globalState: {
       get: (key: string) => values.get(key),
       update: async (key: string, value: unknown) => void values.set(key, value),
@@ -79,6 +81,7 @@ const withManager = <A, E>(
       return Effect.succeed(HttpClientResponse.fromWeb(request, new Response(CONTENT)));
     });
     const layer = AgentManager.layer.pipe(
+      Layer.provide(Telemetry.layer),
       Layer.provide(
         Layer.mergeAll(
           NodeChildProcessSpawner.layer.pipe(Layer.provideMerge(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))),
@@ -256,8 +259,29 @@ describe("kdCode.providers", () => {
     return () => {
       __test.setSetting("kdCode.providers", undefined);
       __test.setSetting("kdCode.env", undefined);
+      __test.setSetting("kdCode.telemetry", undefined);
     };
   });
+
+  it.live("adds the telemetry variables under what the user sets", () =>
+    withManager(
+      () =>
+        Effect.gen(function* () {
+          const manager = yield* AgentManager;
+          assert.isUndefined((yield* manager.command("tool"))?.env.OTEL_EXPORTER_OTLP_ENDPOINT);
+          __test.setSetting("kdCode.telemetry", { enabled: true, endpoint: "http://collector:4318/" });
+          __test.setSetting("kdCode.env", { CLAUDE_CODE_ENABLE_TELEMETRY: "0" });
+          __test.setSetting("kdCode.providers", { tool: { env: { OTEL_LOGS_EXPORTER: "none" } } });
+          const env = (yield* manager.command("tool"))?.env ?? {};
+          assert.strictEqual(env.OTEL_EXPORTER_OTLP_ENDPOINT, "http://collector:4318");
+          assert.strictEqual(env.OTEL_EXPORTER_OTLP_HEADERS, "authorization=key");
+          assert.strictEqual(env.OTEL_RESOURCE_ATTRIBUTES, "kd.agent.id=tool");
+          assert.strictEqual(env.CLAUDE_CODE_ENABLE_TELEMETRY, "0");
+          assert.strictEqual(env.OTEL_LOGS_EXPORTER, "none");
+        }),
+      installed,
+    ),
+  );
 
   it.live("adds a provider's arguments and variables to its command", () =>
     withManager(

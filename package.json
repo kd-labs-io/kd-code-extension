@@ -683,6 +683,45 @@
           "default": false,
           "description": "%config.tracing%"
         },
+        "kdCode.telemetry": {
+          "scope": "machine",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "%config.telemetry.enabled%"
+            },
+            "endpoint": {
+              "type": "string",
+              "default": "http://localhost:4318",
+              "description": "%config.telemetry.endpoint%"
+            },
+            "protocol": {
+              "type": "string",
+              "enum": [
+                "http/protobuf",
+                "http/json",
+                "grpc"
+              ],
+              "default": "http/protobuf",
+              "description": "%config.telemetry.protocol%"
+            },
+            "logPrompts": {
+              "type": "boolean",
+              "default": false,
+              "description": "%config.telemetry.logPrompts%"
+            },
+            "logToolDetails": {
+              "type": "boolean",
+              "default": false,
+              "description": "%config.telemetry.logToolDetails%"
+            }
+          },
+          "additionalProperties": false,
+          "default": {},
+          "description": "%config.telemetry%"
+        },
         "kdCode.notifications": {
           "type": "boolean",
           "default": true,

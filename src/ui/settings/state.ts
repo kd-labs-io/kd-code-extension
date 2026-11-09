@@ -15,6 +15,8 @@ export interface State {
   /** Every agent, enabled or not. */
   providers: ProviderChoice[];
   activeId?: string;
+  /** Names of the OTLP headers in the secret storage. */
+  telemetryHeaders?: ReadonlyArray<string>;
 }
 
 /** Options loaded for the agent `agentId` and its model `model`; neither `options` nor `error` while loading. */
