@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries after 0.0.1 are generated from [Conventional Commits](https://www.conventionalcommits.org/) by release-please.
 
+## [0.0.4](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.3...v0.0.4) (2026-11-11)
+
+
+### Added
+
+* **settings:** add model search and wrap long provider and model names ([d7fe32e](https://github.com/kd-labs-io/kd-code-extension/commit/d7fe32ec570f79fc80f04f7d2cbbc842fe9ffad6))
+
 ## [0.0.3](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.2...v0.0.3) (2026-11-09)
 
 
