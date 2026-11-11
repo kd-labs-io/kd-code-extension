@@ -15,6 +15,7 @@ BACKLOG.md
 **/.DS_Store
 release/**
 tmp/**
+.zvec-grep/**
 test/**
 vitest.config.mts
 media/**/*.css
