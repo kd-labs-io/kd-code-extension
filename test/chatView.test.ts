@@ -797,6 +797,72 @@ describe("ChatViewProvider", () => {
     );
   });
 
+  describe("sessions another client of OpenCode adds to", () => {
+    /** The mock agent lists its sessions as last updated at what this file says. */
+    const updatedFile = Effect.acquireRelease(
+      Effect.promise(async () => {
+        const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kd-code-updated-"));
+        const file = path.join(dir, "updated");
+        await fs.writeFile(file, "t1");
+        return { dir, file, touch: (at: string) => Effect.promise(() => fs.writeFile(file, at)) };
+      }),
+      ({ dir }) => Effect.promise(() => fs.rm(dir, { recursive: true, force: true })),
+    );
+    const syncIn = (chat: { runtime: { runPromise: (effect: any) => Promise<unknown> }; provider: ChatViewProvider }) =>
+      Effect.promise(() => chat.runtime.runPromise(chat.provider.syncSessions));
+
+    it.live("shows a session again when another client updated it, not after its own turns", () =>
+      Effect.scoped(
+        Effect.gen(function* () {
+          const updated = yield* updatedFile;
+          agentEnv = { MOCK_LOAD: "1", MOCK_HISTORY: "1", MOCK_AGENT_NAME: "OpenCode", MOCK_UPDATED: updated.file };
+          const chat = yield* startChat;
+          const { idle, ofType, replyOf, say, tab } = chat;
+          // The first check takes the session's time as seen.
+          yield* syncIn(chat);
+          yield* syncIn(chat);
+          assert.strictEqual(ofType("reset", tab).length, 0);
+
+          yield* updated.touch("t2");
+          yield* syncIn(chat);
+          assert.strictEqual(ofType("reset", tab).length, 1);
+          assert.strictEqual(ofType("session", tab).length, 2);
+          assert.include(replyOf(tab), "replayed s1");
+          assert.strictEqual(ofType("status", tab).at(-1)!.busy, false);
+          yield* syncIn(chat);
+          assert.strictEqual(ofType("reset", tab).length, 1);
+
+          // The tab's own turn updates the session too.
+          say(tab, "updates");
+          yield* until(() => ofType("turnEnd", tab).length === 1, "the turn");
+          yield* idle(tab);
+          yield* updated.touch("t3");
+          yield* syncIn(chat);
+          assert.strictEqual(ofType("reset", tab).length, 1);
+
+          yield* updated.touch("t4");
+          yield* syncIn(chat);
+          assert.strictEqual(ofType("reset", tab).length, 2);
+          assert.deepStrictEqual(ofType("error"), []);
+        }),
+      ),
+    );
+
+    it.live("leaves the sessions of other agents alone", () =>
+      Effect.scoped(
+        Effect.gen(function* () {
+          const updated = yield* updatedFile;
+          agentEnv = { MOCK_LOAD: "1", MOCK_HISTORY: "1", MOCK_UPDATED: updated.file };
+          const chat = yield* startChat;
+          yield* syncIn(chat);
+          yield* updated.touch("t2");
+          yield* syncIn(chat);
+          assert.strictEqual(chat.ofType("reset", chat.tab).length, 0);
+        }),
+      ),
+    );
+  });
+
   describe("asking before something final", () => {
     const showWarningMessage = window.showWarningMessage;
     /** Answers the next questions with their action, or turns them down. */

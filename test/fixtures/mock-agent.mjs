@@ -1,7 +1,7 @@
 // A mock ACP agent speaking ndjson on stdio. Scenarios are picked by env vars and by the prompt text.
 // The unstable entry: the stable API and session/fork.
 import * as acp from "@agentclientprotocol/sdk/unstable";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import { Readable, Writable } from "node:stream";
 
 if (process.env.MOCK_EXIT_EARLY === "1") {
@@ -105,8 +105,16 @@ acp
     if (process.env.MOCK_LIST_FAIL === "1") {
       throw acp.RequestError.internalError(undefined, "cannot list");
     }
+    // MOCK_UPDATED: a file holding when the sessions this agent started were last updated, as another client would.
+    const updatedAt = process.env.MOCK_UPDATED ? readFileSync(process.env.MOCK_UPDATED, "utf8").trim() : undefined;
+    const started = updatedAt
+      ? Array.from({ length: sessions }, (_, i) => ({ sessionId: `s${i + 1}`, cwd: process.cwd(), updatedAt }))
+      : [];
     return {
-      sessions: [...past].map((sessionId) => ({ sessionId, cwd: process.cwd(), title: `Session ${sessionId}` })),
+      sessions: [
+        ...started,
+        ...[...past].map((sessionId) => ({ sessionId, cwd: process.cwd(), title: `Session ${sessionId}` })),
+      ],
     };
   })
   .onRequest(acp.methods.agent.session.delete, ({ params }) => {

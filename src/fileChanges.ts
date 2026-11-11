@@ -132,10 +132,13 @@ export class ChangeSet {
 
   /**
    * After the session's history replayed with `turns` for its user messages, in order: moves each checkpoint onto
-   * its message's turn. When the count differs from the one kept, the positions can't be trusted and are dropped.
+   * its message's turn. When the count differs from the one kept, the positions can't be trusted and are dropped;
+   * with `appended`, more messages are fine: another client of the session added them after those kept.
    */
-  matchReplay(turns: ReadonlyArray<number>): void {
-    const matches = this.messages === turns.length;
+  matchReplay(turns: ReadonlyArray<number>, appended = false): void {
+    const matches = appended
+      ? this.messages !== undefined && this.messages <= turns.length
+      : this.messages === turns.length;
     this.checkpoints = this.checkpoints.map((c) => {
       if (c.message === undefined) return c;
       const turn = matches ? turns[c.message] : undefined;

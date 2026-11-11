@@ -45,6 +45,16 @@ describe("checkpoints across a reload", () => {
     assert.strictEqual(changes.countMessage(), 3);
   });
 
+  it("keeps the positions when another client only added messages", () => {
+    const changes = ChangeSet.fromSaved({ root: "/w", checkpoints: [checkpoint(1, 0)], messages: 2 });
+    changes.matchReplay([10, 11, 12], true);
+    assert.deepStrictEqual(
+      changes.checkpoints.map((c) => [c.turn, c.message]),
+      [[10, 0]],
+    );
+    assert.strictEqual(changes.countMessage(), 3);
+  });
+
   it("doesn't count messages saved before they were counted", () => {
     const changes = ChangeSet.fromSaved({ root: "/w", checkpoints: [checkpoint(1, undefined)] });
     assert.isUndefined(changes.countMessage());

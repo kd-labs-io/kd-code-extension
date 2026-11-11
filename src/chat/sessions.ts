@@ -16,7 +16,7 @@ import { confirm, type ChangeReview } from "./changes";
 import { canDeleteSessions, canReopen } from "./history";
 import type { ChatUi } from "./host";
 import type { Permissions } from "./permissions";
-import { resetConversation, type Reopen, type RunningAgent, type Tab, type TabList } from "./tabs";
+import { isIdle, resetConversation, type Reopen, type RunningAgent, type Tab, type TabList } from "./tabs";
 import { TurnTraces } from "./turnTraces";
 import type { TabTurns } from "./turns";
 import type { TabUsage } from "./usage";
@@ -156,7 +156,8 @@ export class TabSessions {
 
   /**
    * Shows a past session in `tab`, replaying its history when the agent supports session/load. The tab's checkpoints
-   * stay: callers showing another session clear them first.
+   * stay: callers showing another session clear them first. With `resync`, the session is the tab's own, shown again
+   * with what another client of the agent added: it keeps the options it has and stays the tab's when that fails.
    */
   private readonly loadInto = Effect.fn("TabSessions.loadInto")(function* (
     this: TabSessions,
@@ -164,6 +165,7 @@ export class TabSessions {
     running: RunningAgent,
     sessionId: string,
     cwd: string,
+    resync = false,
   ) {
     const { agent } = running;
     const caps = agent.initializeResponse.agentCapabilities;
@@ -176,7 +178,7 @@ export class TabSessions {
     tab.cwd = cwd;
     tab.used = true;
     tab.busy = true;
-    this.host.status(tab, "chat.loadingSession", { loading: true });
+    this.host.status(tab, resync ? "chat.syncingSession" : "chat.loadingSession", { loading: true });
     this.host.postTabs();
     const res = yield* (
       caps?.loadSession
@@ -185,11 +187,11 @@ export class TabSessions {
             return agent.loadSession(sessionId, cwd).pipe(
               Effect.tap(() =>
                 Effect.sync(() => {
-                  const traces = tab.traces.matchReplay(replaying.turns);
+                  const traces = tab.traces.matchReplay(replaying.turns, resync);
                   if (traces.length > 0) {
                     this.host.postTab(tab, { type: "turnTraces", traces });
                   }
-                  this.host.changes.matchReplay(tab, replaying.turns);
+                  this.host.changes.matchReplay(tab, replaying.turns, resync);
                 }),
               ),
             );
@@ -204,6 +206,15 @@ export class TabSessions {
     ).pipe(
       Effect.tapError(() =>
         Effect.sync(() => {
+          if (resync) {
+            this.host.postTab(tab, { type: "notice", key: "chat.syncFailed" });
+            // The reset emptied the pickers and the usage; the session still has them.
+            this.host.postTab(tab, { type: "session", sessionId, configOptions: tab.configOptions });
+            this.host.contextWindow.post(tab);
+            this.host.usage.postSaved(tab);
+            this.host.status(tab, "chat.ready");
+            return;
+          }
           tab.sessionId = undefined;
           tab.running = undefined;
           tab.cwd = previousCwd;
@@ -217,7 +228,9 @@ export class TabSessions {
         }),
       ),
     );
-    const configOptions = yield* this.restoreOptions(tab, running, { sessionId, configOptions: res.configOptions });
+    const configOptions = resync
+      ? (res.configOptions ?? tab.configOptions)
+      : yield* this.restoreOptions(tab, running, { sessionId, configOptions: res.configOptions });
     this.host.setConfigOptions(tab, configOptions);
     this.host.postTab(tab, { type: "session", sessionId, configOptions });
     this.host.contextWindow.post(tab);
@@ -242,6 +255,25 @@ export class TabSessions {
       }),
     );
   }
+
+  /**
+   * Replays the tab's session again, to show what another client of its agent (e.g. OpenCode's app) added to it.
+   * Tells whether it did: a tab at work, or without a session to replay, is left alone.
+   */
+  readonly resync = Effect.fn("TabSessions.resync")(function* (this: TabSessions, tab: Tab) {
+    const { running, sessionId } = tab;
+    if (
+      !running ||
+      !sessionId ||
+      !running.agent.initializeResponse.agentCapabilities?.loadSession ||
+      !this.host.tabs.has(tab) ||
+      !isIdle(tab)
+    ) {
+      return false;
+    }
+    yield* this.loadInto(tab, running, sessionId, tab.cwd, true);
+    return true;
+  });
 
   /** Frees a session the chat no longer shows, when the agent supports session/close. */
   closeSessionOnAgent(running: RunningAgent | undefined, sessionId: string): Effect.Effect<void> {

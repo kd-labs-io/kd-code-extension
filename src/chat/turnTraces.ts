@@ -101,10 +101,10 @@ export class TurnTraces {
   /**
    * After the session's history replayed with `turns` for its user messages, in order: moves each trace onto its
    * message's turn, and returns them. When the count differs from the one kept, the positions can't be trusted and
-   * the traces are dropped.
+   * the traces are dropped; with `appended`, more messages are fine: another client of the session added them.
    */
-  matchReplay(turns: ReadonlyArray<number>): ReadonlyArray<{ turn: number; trace: TurnTrace }> {
-    const matches = this.messages === turns.length;
+  matchReplay(turns: ReadonlyArray<number>, appended = false): ReadonlyArray<{ turn: number; trace: TurnTrace }> {
+    const matches = appended ? this.messages <= turns.length : this.messages === turns.length;
     this.traces = matches
       ? this.traces.flatMap((each) => {
           const turn = turns[each.message];

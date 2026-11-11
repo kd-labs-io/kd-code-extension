@@ -152,8 +152,8 @@ export class ChangeReview implements vscode.Disposable {
   }
 
   /** Puts the checkpoints back on their messages after the session's history replayed with `turns`. */
-  matchReplay(tab: Tab, turns: ReadonlyArray<number>): void {
-    tab.changes.matchReplay(turns);
+  matchReplay(tab: Tab, turns: ReadonlyArray<number>, appended = false): void {
+    tab.changes.matchReplay(turns, appended);
     this.host.saveTabs();
     this.post(tab);
   }

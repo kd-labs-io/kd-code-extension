@@ -624,6 +624,8 @@ const en = {
   "chat.historySearch": "Search conversations",
   "chat.historyNoMatch": "No conversations match.",
   "chat.loadingSession": "Opening conversation…",
+  "chat.syncingSession": "Updating with messages from elsewhere…",
+  "chat.syncFailed": "Couldn't update this conversation with messages from elsewhere; trying again shortly.",
   "chat.resumedNoHistory": "Conversation resumed. This agent doesn't send back earlier messages.",
   "bestOf.compare": "Compare",
   "bestOf.compareTitle": "Send the next message to several agents or models, and compare what they change",

@@ -31,6 +31,7 @@ import { ChatIndicators } from "./indicators";
 import { ViewMessages } from "./messages";
 import { openFile } from "./openFile";
 import { Permissions } from "./permissions";
+import { REMOTE_SYNC_INTERVAL_MS, RemoteSync } from "./remoteSync";
 import { TabSessions } from "./sessions";
 import type { ChangeHunk, Draft, FromWebview, GroupMessage, TabMessage } from "./protocol";
 import { TabActions, type TabAction } from "./tabActions";
@@ -147,6 +148,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
       ),
   });
   private readonly history = new HistoryRequests();
+  /** What OpenCode's other clients add to the tabs' sessions. */
+  private readonly remoteSync = new RemoteSync();
+  /** A check of the sessions is under way: the timer and focus don't start another. */
+  private syncing = false;
   /** Attachments added before the webview was ready are delivered on "ready". */
   private readonly attachments = new AttachmentQueue((attachments, prompt) => {
     if (!this.view) {
@@ -234,6 +239,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         cancelTab: (tab) => this.sessions.cancelTab(tab),
         finished: (tab) => this.attention.raise(tab, "finished"),
         turnEnded: (tab) => {
+          // The turn updated the session; OpenCode may still be naming it.
+          this.remoteSync.forget(tab);
           this.changes.post(tab);
           this.run(this.refreshBranch(tab), tab);
           this.run(this.tabWorktrees.refreshFinishable(tab), tab);
@@ -344,8 +351,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (state.focused) {
           this.run(this.refreshBranch(this.tabs.active));
           this.run(this.tabWorktrees.refreshOnFocus(this.tabs.active));
+          // Messages sent from OpenCode's app while the user was away.
+          this.run(this.syncSessions);
         }
       }),
+      (() => {
+        const timer = setInterval(() => this.run(this.syncSessions), REMOTE_SYNC_INTERVAL_MS);
+        return { dispose: () => clearInterval(timer) };
+      })(),
       // Edits the user saves change the counts.
       vscode.workspace.onDidSaveTextDocument((doc) => {
         for (const tab of this.tabs.all) {
@@ -380,7 +393,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
       `${view.webview.cspSource} data: https://cdn.agentclientprotocol.com`,
     );
     view.webview.onDidReceiveMessage((msg: FromWebview) => this.run(this.onMessage(msg), this.tabOf(msg)));
-    view.onDidChangeVisibility(() => this.attention.refresh());
+    view.onDidChangeVisibility(() => {
+      this.attention.refresh();
+      this.run(this.syncSessions);
+    });
     view.onDidDispose(() => {
       this.view = undefined;
       this.run(setChatFocused(false));
@@ -737,6 +753,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         break;
       case "setConfig":
         yield* this.sessions.setConfig(tab, msg.configId, msg.value);
+        // Picking a model or mode updates the session too.
+        this.remoteSync.forget(tab);
         break;
       case "saveConversation":
         yield* saveConversation(tab, msg.markdown);
@@ -924,6 +942,31 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
       this.post({ type: "quote", text });
     }
   }
+
+  /**
+   * Shows again the OpenCode sessions another client added to, e.g. its phone app with remote on. Only while the user
+   * can see the chat: the next check, on focus, catches up.
+   */
+  readonly syncSessions: Effect.Effect<void, never, AppServices> = Effect.suspend(() => {
+    if (this.syncing || !this.view?.visible || !vscode.window.state.focused) {
+      return Effect.void;
+    }
+    this.syncing = true;
+    return Effect.gen({ self: this }, function* () {
+      for (const change of yield* this.remoteSync.changes(this.tabs.all)) {
+        const shown = yield* this.sessions
+          .resync(change.tab)
+          .pipe(
+            Effect.catch((err) =>
+              Effect.logWarning(`Updating a session failed: ${err.message}`).pipe(Effect.as(false)),
+            ),
+          );
+        if (shown) {
+          this.remoteSync.shown(change);
+        }
+      }
+    }).pipe(Effect.ensuring(Effect.sync(() => void (this.syncing = false))));
+  });
 
   /** Stops the active tab's turn. */
   readonly cancel = Effect.fn("ChatView.cancel")(function* (this: ChatViewProvider) {

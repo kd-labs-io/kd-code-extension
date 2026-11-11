@@ -233,6 +233,11 @@ export function usageOf(tab: Tab, sessionId: string): SavedUsage | undefined {
   return tab.usageSessionId === sessionId ? tab.usage : undefined;
 }
 
+/** Whether nothing runs in the tab's session nor is about to: no turn, send, replay, queue or measurement. */
+export function isIdle(tab: Tab): boolean {
+  return !tab.busy && !tab.sending && !tab.replaying && tab.queue.length === 0 && !tab.measuringContext;
+}
+
 /** The chat tabs in strip order, and the active one. */
 export class TabList {
   private nextId = 1;

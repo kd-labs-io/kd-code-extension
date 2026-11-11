@@ -35,6 +35,17 @@ describe("TurnTraces", () => {
     assert.deepStrictEqual(traces.saved, { messages: 2, traces: [] });
   });
 
+  it("keeps the traces when another client only added messages", () => {
+    const traces = TurnTraces.fromSaved({ messages: 2, traces: [entry(1, 0), entry(2, 1)] });
+    assert.deepStrictEqual(traces.matchReplay([10, 11, 12], true), [
+      { turn: 10, trace: trace("t1") },
+      { turn: 11, trace: trace("t2") },
+    ]);
+    assert.strictEqual(traces.countMessage(), 3);
+    // Fewer messages still don't line up.
+    assert.deepStrictEqual(TurnTraces.fromSaved({ messages: 3, traces: [entry(1, 0)] }).matchReplay([10], true), []);
+  });
+
   it("starts over for another session", () => {
     const traces = TurnTraces.fromSaved({ messages: 1, traces: [entry(1, 0)] });
     traces.clear();

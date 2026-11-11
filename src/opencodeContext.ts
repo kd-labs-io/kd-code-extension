@@ -11,6 +11,11 @@ import type { AgentCommand } from "./acpClient";
 
 const OPENCODE_AGENT = "OpenCode";
 
+/** Whether the agent is OpenCode, any version. */
+export function isOpenCode(agentInfo: { name: string } | null | undefined): boolean {
+  return agentInfo?.name === OPENCODE_AGENT;
+}
+
 /** Whether the agent is OpenCode v2 or later, whose server answers `opencode api`. */
 export function isOpenCodeServer(agentInfo: { name: string; version: string } | null | undefined): boolean {
   if (agentInfo?.name !== OPENCODE_AGENT) return false;

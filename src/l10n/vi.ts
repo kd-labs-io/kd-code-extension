@@ -627,6 +627,8 @@ const vi: Record<MessageKey, string> = {
   "chat.historySearch": "Tìm cuộc trò chuyện",
   "chat.historyNoMatch": "Không có cuộc trò chuyện nào khớp.",
   "chat.loadingSession": "Đang mở cuộc trò chuyện…",
+  "chat.syncingSession": "Đang cập nhật tin nhắn gửi từ nơi khác…",
+  "chat.syncFailed": "Không cập nhật được tin nhắn gửi từ nơi khác; sẽ thử lại sau ít giây.",
   "chat.resumedNoHistory": "Đã tiếp tục cuộc trò chuyện. Agent này không gửi lại các tin nhắn trước đó.",
   "bestOf.compare": "So sánh",
   "bestOf.compareTitle": "Gửi tin nhắn tiếp theo cho nhiều agent hoặc model, rồi so sánh những gì chúng thay đổi",
