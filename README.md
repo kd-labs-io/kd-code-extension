@@ -9,70 +9,24 @@ Chat with coding agents in VS Code over the [Agent Client Protocol](https://agen
 
 ## Getting started
 
-KD Code needs VS Code ≥ 1.123. There is no release yet, so build it from source with `npm install && npm run reinstall`.
-
-The walkthrough (`KD Code: Get Started`) takes you through these steps:
+Install **KD Code** (`kd-labs.kd-code`) from the Visual Studio Marketplace or Open VSX, or grab the `.vsix` from [GitHub Releases](https://github.com/kd-labs-io/kd-code-extension/releases). It needs VS Code ≥ 1.123.
 
 1. Run `KD Code: Manage Agents` and install an agent.
 2. Run `KD Code: Doctor` to check your setup.
-3. Open the chat in the secondary side bar with `Ctrl+Alt+A` (`Cmd+Alt+A` on macOS).
-4. If the agent asks you to sign in, use the **Log in** button.
-5. Start chatting.
+3. Open the chat with `Ctrl+Alt+A` (`Cmd+Alt+A` on macOS) and start chatting. Use **Log in** if the agent asks.
 
-`npx` agents need Node.js, `uvx` agents need [uv](https://docs.astral.sh/uv/). Settings are under `KD Code: Open Settings`, for your user or the current workspace. Known limitations: [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+`KD Code: Get Started` walks you through the same steps. `npx` agents need Node.js, `uvx` agents need [uv](https://docs.astral.sh/uv/). See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for known limitations.
 
 ## Features
 
-### Chat
-
-- Keep chats in an expandable sidebar of tabs you can pin, rename and reorder. Each row shows the requests waiting for you and the lines changed.
-- Search, sort and reopen past conversations from the sidebar, and delete the ones you no longer need.
-- Find text in a conversation, and export it to Markdown.
-- Queue messages while the agent works, edit and resend earlier ones, retry, or fork a conversation into a new tab.
-- Write in a composer with live Markdown preview; drafts survive reloads. Use `/` for agent commands and `$` for skills.
-- Answer the agent's permission requests, form questions and requests to open a link in the chat, and follow its plans, tools, subagents, terminals and context compaction.
-- Let rules answer permission requests for you, for all projects or one workspace, or everything in worktree chats.
-- Pick the model, effort and fast mode per tab, or the mode for agents that only offer those, and start from your last choices or the defaults you set for each agent.
-
-### Context
-
-- Attach files, folders, images, problems and terminals with `@`, by pasting, or from the drop view. Optionally include the open file in every message.
-- Add editor selections, terminal selections, the last command output or the last failed command with a command or shortcut.
-- Run **Explain**, **Refactor** and **Write Tests** on a selection, or **Fix with KD Code** on a problem.
-- Preview images, draw on them with pen, arrow, rectangle and text, and open them in a separate window.
-
-### Changes
-
-- Review the agent's changes per file or per change, with Keep and Undo in the chat and in the editor.
-- Restore the files to a checkpoint from before any message (turn on `kdCode.showRestore`).
-- Follow the agent in the editor: open the files it reads and edits, and highlight the lines it changes.
-
-### Worktrees
-
-- Run a tab, or every new chat, in a git worktree of its own, on a branch named after the first prompt. The branch under the composer shows where the tab works and switches between worktrees.
-- Compare attempts with the Compare checkbox (Best of N): send one prompt to several agents, models and efforts. Each works in its own worktree under a group tab, where you compare their diffs and apply the best one, or discard them all.
-- Finish a worktree from the button under the composer: merge it, create a pull request whose description its agent drafts (with the GitHub CLI), or copy its changes as staged changes. The bar then shows where the work went, a merge's conflicts, and the way to delete the worktree.
-- Clean up the worktrees you no longer use in one go.
-- Give new worktrees ignored files such as `.env` and `node_modules`, and run a setup command, your own or the project's after you allow it.
-
-### Agents
-
-- Install, update and switch agents from **Settings → Agent → Manage agents**, with update checks on startup.
-- Add your own agents from local commands, and pass extra MCP servers and environment variables to agents.
-- Log in to and out of an agent, or restart it, from the chat view's menu.
-- Check your setup on the **Doctor** page of Settings: Node.js, npm, uv and git, and whether each agent starts and needs a login. It sends no prompts, and offers a fix for what it finds.
-
-### Git, usage and status
-
-- Generate commit messages from the Source Control view with your choice of agent, model, effort and instructions, then commit and push.
-- Track tokens and cost by day, conversation and agent, or read the logs agents keep on your machine through [ccusage](https://github.com/ryoppippi/ccusage).
-- See context window use and session cost in the chat, compact the conversation from there for agents that offer `/compact`, and see activity and the tab's tokens and turns in the status bar.
-- Get notified when a conversation in the background finishes or needs you.
-- Turn on Tracing to see each turn's tokens, cost, context and duration in the chat, and every ACP message in a log.
-
-### Language
-
-- Use the interface in English or Vietnamese.
+- **Chat**: tabs you can pin, rename and reorder, searchable history, queue, edit, retry and fork messages, `/` commands and `$` skills, permission rules, and model, effort and mode per tab.
+- **Context**: attach files, folders, images, problems, selections and terminal output with `@`, paste or drag and drop. Run **Explain**, **Refactor**, **Write Tests** or **Fix with KD Code** from the editor.
+- **Changes**: review, keep or undo the agent's edits per file or per change, follow it in the editor, and restore checkpoints.
+- **Worktrees**: run a chat in its own git worktree, send one prompt to several agents and models (Best of N) and apply the best result, then merge, open a PR or copy the changes.
+- **Agents**: install, update and add your own agents, pass MCP servers and environment variables, and check your setup with Doctor.
+- **Usage**: context window breakdown, tokens and cost by day, conversation and agent, tracing, and OpenTelemetry export to an OTLP endpoint.
+- **Git**: generate commit messages from the Source Control view.
+- **Language**: English and Vietnamese.
 
 ## Keyboard shortcuts
 
@@ -80,6 +34,7 @@ The walkthrough (`KD Code: Get Started`) takes you through these steps:
 | ------------------------- | ------------------ | ------------ | --------------------------------------- |
 | Open the chat             | `Ctrl+Alt+A`       | `Cmd+Alt+A`  | Anywhere                                |
 | New chat tab              | `Ctrl+Shift+Alt+N` | `Ctrl+Cmd+N` | Anywhere                                |
+| Find in conversation      | `Ctrl+F`           | `Cmd+F`      | Chat focused                            |
 | Archive the active thread | `Ctrl+W`           | `Cmd+W`      | Chat focused                            |
 | Cancel                    | `Ctrl+.`           | `Cmd+.`      | Chat focused                            |
 | Add selection to chat     | `Ctrl+Alt+L`       | `Cmd+Alt+L`  | Text selected in the editor or terminal |
@@ -87,10 +42,8 @@ The walkthrough (`KD Code: Get Started`) takes you through these steps:
 
 ## Security
 
-- Settings that decide what runs (custom agents, MCP servers, environment variables, Node and ccusage paths) apply only at machine scope, so a workspace cannot set them.
-- A project's worktree setup command asks first, and asks again when the command or a file it names changes.
-- Links from agents open only after asking, over https, or over http to localhost, 127.0.0.1 and hosts you list in Settings.
-- Registry entries with unsafe paths are refused at install.
+- Settings that decide what runs (custom agents, MCP servers, environment variables, tool paths) apply only at machine scope, so a workspace cannot set them.
+- A project's worktree setup command and links from agents open only after you allow them.
 - Permission rules save clicks but are no security boundary: agents describe their own tools, and a worktree is no sandbox.
 
 ## Contributing
