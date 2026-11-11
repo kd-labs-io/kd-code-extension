@@ -22,6 +22,7 @@ import loaderIcon from "@tabler/icons/outline/loader-2.svg";
 import plusIcon from "@tabler/icons/outline/plus.svg";
 import refreshIcon from "@tabler/icons/outline/refresh.svg";
 import robotIcon from "@tabler/icons/outline/robot.svg";
+import searchIcon from "@tabler/icons/outline/search.svg";
 import settingsIcon from "@tabler/icons/outline/settings.svg";
 import starIcon from "@tabler/icons/outline/star.svg";
 import starFilledIcon from "@tabler/icons/filled/star.svg";
@@ -562,6 +563,11 @@ function Models(props: {
   const hidden = ordered.filter((m) => isHidden(prefs, m.value));
   const favorites = prefs.favorites ?? [];
   const starred = (value: string) => favorites.some((f) => f.value === value);
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const matches = (m: Choice) => !q || `${m.name} ${m.value} ${m.description ?? ""}`.toLowerCase().includes(q);
+  const shownMatches = shown.filter(matches);
+  const hiddenMatches = hidden.filter(matches);
 
   const move = (value: string, delta: number) => {
     const values = shown.map((m) => m.value);
@@ -594,10 +600,12 @@ function Models(props: {
       >
         <Icon svg={starred(m.value) ? starFilledIcon : starIcon} />
       </button>
-      <span className="model-name">{m.name}</span>
-      {m.name !== m.value && <code className="model-value">{m.value}</code>}
-      <span className="spacer" />
-      {visible && (
+      <span className="model-text">
+        <span className="model-name">{m.name}</span>
+        {m.name !== m.value && <code className="model-value">{m.value}</code>}
+      </span>
+      {/* Moving only makes sense against the full order, not a filtered slice of it. */}
+      {visible && !q && (
         <span className="model-move">
           <button
             className="icon-btn"
@@ -643,6 +651,16 @@ function Models(props: {
     >
       {models && models.length > 0 && (
         <div className="models-toolbar">
+          <div className="models-search">
+            <Icon svg={searchIcon} />
+            <input
+              type="search"
+              aria-label={t("chat.searchModels")}
+              placeholder={t("chat.searchModels")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
           <button
             className="link-btn"
             onClick={() =>
@@ -657,11 +675,16 @@ function Models(props: {
       {loading && <div className="note muted">{t("settings.loadingOptions")}</div>}
       {error && <div className="note error">{error}</div>}
       {models?.length === 0 && <div className="note muted">{t("settings.noModels")}</div>}
-      {shown.length > 0 && <div className="models-list">{shown.map((m, i) => row(m, i, true))}</div>}
-      {hidden.length > 0 && (
+      {q && models && models.length > 0 && shownMatches.length + hiddenMatches.length === 0 && (
+        <div className="note muted">{t("chat.noModelsMatch")}</div>
+      )}
+      {shownMatches.length > 0 && (
+        <div className="models-list">{shownMatches.map((m) => row(m, shown.indexOf(m), true))}</div>
+      )}
+      {hiddenMatches.length > 0 && (
         <>
           <div className="models-heading">{t("providers.hiddenHeading")}</div>
-          <div className="models-list">{hidden.map((m, i) => row(m, i, false))}</div>
+          <div className="models-list">{hiddenMatches.map((m, i) => row(m, i, false))}</div>
         </>
       )}
     </Section>

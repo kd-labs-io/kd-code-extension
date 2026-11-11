@@ -152,13 +152,12 @@ button.provider-pick:focus-visible {
   flex-wrap: wrap;
   gap: 4px 8px;
 }
+/* The whole name, wrapping onto more lines rather than cut off: the list column is narrow. */
 .provider-name {
   min-width: 0;
   max-width: 100%;
-  white-space: nowrap;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .provider-version {
   font-family: var(--vscode-editor-font-family);
@@ -172,16 +171,22 @@ button.provider-pick:focus-visible {
   align-self: center;
   background: var(--vscode-notificationsInfoIcon-foreground, var(--vscode-focusBorder));
 }
+/* Every item carries a leading dot; the strip is shifted left by one dot and clipped there,
+   so whichever item starts a line (after wrapping, too) shows none. */
 .provider-sub {
+  --dot: 14px;
   display: flex;
   flex-wrap: wrap;
-  gap: 0 6px;
+  margin-left: calc(-1 * var(--dot));
+  clip-path: inset(0 0 0 var(--dot));
   font-size: 0.92em;
   color: var(--vscode-descriptionForeground);
 }
-.provider-sub > span + span::before {
+.provider-sub > span::before {
   content: "·";
-  margin-right: 6px;
+  display: inline-block;
+  width: var(--dot);
+  text-align: center;
 }
 .provider-status.ok {
   color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
@@ -400,9 +405,34 @@ code.provider-command {
 
 .models-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   margin-bottom: 6px;
+}
+.models-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 100%;
+}
+.models-search .svg-icon svg {
+  position: absolute;
+  left: 8px;
+  width: 14px;
+  height: 14px;
+  color: var(--vscode-descriptionForeground);
+  pointer-events: none;
+}
+.models-search input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px 8px 5px 28px;
+  font: inherit;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--border));
+  border-radius: 4px;
 }
 button.link-btn {
   padding: 2px 0;
@@ -438,8 +468,12 @@ button.link-btn:hover {
 .model-row[data-hidden] .model-star {
   opacity: 0.5;
 }
-.model-row .spacer {
+.model-text {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .model-name {
   white-space: nowrap;
@@ -489,5 +523,17 @@ code.model-value {
   }
   .model-move {
     opacity: 1;
+  }
+  /* Name above id, both wrapping in full instead of cut off with an ellipsis. */
+  .model-text {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 4px 0;
+  }
+  .model-name,
+  code.model-value {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
