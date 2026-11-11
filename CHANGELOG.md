@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries after 0.0.1 are generated from [Conventional Commits](https://www.conventionalcommits.org/) by release-please.
 
+## [0.0.5](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.4...v0.0.5) (2026-11-11)
+
+
+### Added
+
+* **chat:** show messages sent to OpenCode sessions from its other clients ([dd4409d](https://github.com/kd-labs-io/kd-code-extension/commit/dd4409d436a5494a3f4ce258e0c109b1e36beb8c))
+
 ## [0.0.4](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.3...v0.0.4) (2026-11-11)
 
 
