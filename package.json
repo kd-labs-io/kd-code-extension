@@ -2,7 +2,7 @@
   "name": "kd-code",
   "displayName": "KD Code",
   "description": "%description%",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "kd-labs",
   "icon": "media/extension-icon.png",
   "license": "MIT",
