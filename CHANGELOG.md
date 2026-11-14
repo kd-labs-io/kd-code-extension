@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries after 0.0.1 are generated from [Conventional Commits](https://www.conventionalcommits.org/) by release-please.
 
+## [0.0.6](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.5...v0.0.6) (2026-11-14)
+
+
+### Added
+
+* **chat:** show multi-question forms one question at a time ([9cdf238](https://github.com/kd-labs-io/kd-code-extension/commit/9cdf2386d01b8f7ddca2d64ae49905812d44c1ac))
+
 ## [0.0.5](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.4...v0.0.5) (2026-11-11)
 
 
