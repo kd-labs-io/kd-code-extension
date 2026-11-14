@@ -26,6 +26,57 @@
 .elicitation-field {
   margin-top: 10px;
 }
+/* Several questions show one at a time; these pick which. */
+.elicitation-steps {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+button.elicitation-step {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 14em;
+  padding: 3px 8px 3px 4px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+  border-radius: 12px;
+}
+button.elicitation-step:hover {
+  color: var(--vscode-foreground);
+  background: var(--vscode-list-hoverBackground);
+}
+button.elicitation-step.current {
+  color: var(--vscode-foreground);
+  border-color: var(--vscode-focusBorder);
+  background: color-mix(in srgb, var(--vscode-focusBorder) 15%, transparent);
+}
+.elicitation-step-number {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 0.8em;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+}
+.elicitation-step.answered .elicitation-step-number {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border-color: var(--vscode-button-background);
+}
+.elicitation-step-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* Free text right after a choice reads as its "other" answer. */
 .elicitation-field:has(.elicitation-options) + .elicitation-field:has(.elicitation-input) {
   margin-top: 12px;

@@ -529,6 +529,8 @@ const vi: Record<MessageKey, string> = {
   "chat.question": "Câu hỏi",
   "chat.elicitation.submit": "Gửi",
   "chat.elicitation.decline": "Bỏ qua",
+  "chat.elicitation.next": "Tiếp",
+  "chat.elicitation.back": "Quay lại",
   "chat.elicitation.answered": "Đã trả lời",
   "chat.elicitation.declined": "Đã bỏ qua",
   "chat.elicitation.cancelled": "Đã huỷ",

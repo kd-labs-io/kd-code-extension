@@ -525,6 +525,8 @@ const en = {
   "chat.question": "Question",
   "chat.elicitation.submit": "Send",
   "chat.elicitation.decline": "Skip",
+  "chat.elicitation.next": "Next",
+  "chat.elicitation.back": "Back",
   "chat.elicitation.answered": "Answered",
   "chat.elicitation.declined": "Skipped",
   "chat.elicitation.cancelled": "Cancelled",
