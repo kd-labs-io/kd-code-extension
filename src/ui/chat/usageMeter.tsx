@@ -55,7 +55,8 @@ export function UsageMeter({
   if (limit < usage.size) rows.push([t("chat.autoCompactAt"), tokens(limit)]);
   if (usage.cost) {
     const cost = new Intl.NumberFormat(lang, { style: "currency", currency: usage.cost.currency });
-    rows.push([t("chat.sessionCost"), cost.format(usage.cost.amount)]);
+    // Zero means the agent doesn't price the session (e.g. a subscription), not that it was free.
+    rows.push([t("chat.sessionCost"), usage.cost.amount > 0 ? cost.format(usage.cost.amount) : "—"]);
   }
   if (totals?.tokens.total) rows.push([t("chat.sessionTokens"), tokens(totals.tokens.total)]);
   if (totals?.turns) rows.push([t("chat.sessionTurns"), exact.format(totals.turns)]);

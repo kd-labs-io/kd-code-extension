@@ -37,6 +37,9 @@ export function TurnTraceView({ trace }: { trace: TurnTrace }) {
   // A turn often costs less than a cent.
   const money =
     cost && new Intl.NumberFormat(lang, { style: "currency", currency: cost.currency, maximumFractionDigits: 4 });
+  // A session total of zero means the agent doesn't price it (e.g. a subscription), not that it was free.
+  const priced = !!cost && cost.session > 0;
+  const amount = (n: number | undefined) => (n === undefined ? undefined : priced ? money?.format(n) : "—");
   const count = (n: number | undefined) => (n === undefined ? undefined : exact.format(n));
   const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 1 });
   const seconds = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
@@ -90,8 +93,8 @@ export function TurnTraceView({ trace }: { trace: TurnTrace }) {
       context &&
         `${exact.format(context.used)} / ${exact.format(context.size)}${context.size > 0 ? ` (${percent.format(context.used / context.size)})` : ""}`,
     ],
-    [t("chat.trace.turnCost"), cost && money?.format(cost.turn)],
-    [t("chat.sessionCost"), cost && money?.format(cost.session)],
+    [t("chat.trace.turnCost"), amount(cost?.turn)],
+    [t("chat.sessionCost"), amount(cost?.session)],
     [t("chat.trace.session"), sessionId],
   ];
   const stopReasonLabel = `${t("chat.trace.stopReason")}: ${stopReason}`;
@@ -99,7 +102,7 @@ export function TurnTraceView({ trace }: { trace: TurnTrace }) {
     <details className="turn-trace">
       <summary>
         <span className="turn-trace-part turn-trace-optional">{formatDuration(durationMs)}</span>
-        {cost && <span className="turn-trace-part turn-trace-key">{money?.format(cost.turn)}</span>}
+        {cost && priced && <span className="turn-trace-part turn-trace-key">{money?.format(cost.turn)}</span>}
         {tokens && (
           <span className="turn-trace-part turn-trace-key">{t("chat.tokens", compact.format(tokens.total))}</span>
         )}
