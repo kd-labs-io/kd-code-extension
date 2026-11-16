@@ -420,6 +420,9 @@ const en = {
   "settings.showRestore": "Show Restore button",
   "settings.showRestoreDesc":
     "Show the Restore button on your messages, which puts the files the agent changed back to how they were before that message.",
+  "settings.showThinking": "Show thinking",
+  "settings.showThinkingDesc":
+    "Show what the agent thinks under Thinking in the chat (for Claude, a summary of its thinking). Applies to chats started afterwards.",
   "settings.git": "Git",
   "settings.gitDesc": "Worktrees for conversations, and commit messages for the Source Control view.",
   "settings.worktree": "Worktree",

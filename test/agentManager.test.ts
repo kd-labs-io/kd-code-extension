@@ -290,8 +290,28 @@ describe("kdCode.providers", () => {
           __test.setSetting("kdCode.providers", { tool: { args: ["--model", "x"], env: { KEY: "own" } } });
           const command = yield* AgentManager.use((manager) => manager.command("tool"));
           assert.deepStrictEqual(command?.args, ["--acp", "--model", "x"]);
-          assert.deepStrictEqual(command?.env, { SHARED: "1", KEY: "own" });
+          assert.deepStrictEqual(command?.env, {
+            CLAUDE_CODE_THINKING_DISPLAY: "summarized",
+            SHARED: "1",
+            KEY: "own",
+          });
         }),
+      installed,
+    ),
+  );
+
+  it.live("asks for the agent's thinking unless kdCode.showThinking is off, and lets the user's env win", () =>
+    withManager(
+      () =>
+        Effect.gen(function* () {
+          const manager = yield* AgentManager;
+          assert.strictEqual((yield* manager.command("tool"))?.env.CLAUDE_CODE_THINKING_DISPLAY, "summarized");
+          __test.setSetting("kdCode.showThinking", false);
+          assert.isUndefined((yield* manager.command("tool"))?.env.CLAUDE_CODE_THINKING_DISPLAY);
+          __test.setSetting("kdCode.showThinking", undefined);
+          __test.setSetting("kdCode.env", { CLAUDE_CODE_THINKING_DISPLAY: "omitted" });
+          assert.strictEqual((yield* manager.command("tool"))?.env.CLAUDE_CODE_THINKING_DISPLAY, "omitted");
+        }).pipe(Effect.ensuring(Effect.sync(() => __test.setSetting("kdCode.showThinking", undefined)))),
       installed,
     ),
   );

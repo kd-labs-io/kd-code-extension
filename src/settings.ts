@@ -108,6 +108,8 @@ export const Settings = Schema.Struct({
   showChanges: Schema.Boolean,
   /** Show the Restore button on the user's messages. */
   showRestore: Schema.Boolean,
+  /** Have agents send what they think, for the chat to show under "Thinking"; applies to agents started afterwards. */
+  showThinking: Schema.Boolean,
   /** Size in pixels of the chat's text; 0 follows VS Code's. */
   fontSize: FontSize,
   /** Size in pixels of the chat's code and terminal output; 0 follows the editor's. */
@@ -160,6 +162,7 @@ export const SETTING_KEYS = [
   "autoScroll",
   "showChanges",
   "showRestore",
+  "showThinking",
   "fontSize",
   "codeFontSize",
   "tracing",
@@ -197,6 +200,7 @@ const DEFAULTS: Settings = {
   autoScroll: true,
   showChanges: true,
   showRestore: false,
+  showThinking: true,
   fontSize: 0,
   codeFontSize: 0,
   tracing: false,
@@ -243,6 +247,7 @@ export function readSettings(): Settings {
     autoScroll: read("autoScroll"),
     showChanges: read("showChanges"),
     showRestore: read("showRestore"),
+    showThinking: read("showThinking"),
     fontSize: read("fontSize"),
     codeFontSize: read("codeFontSize"),
     tracing: read("tracing"),

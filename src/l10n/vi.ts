@@ -423,6 +423,9 @@ const vi: Record<MessageKey, string> = {
   "settings.showRestore": "Hiện nút Khôi phục",
   "settings.showRestoreDesc":
     "Hiện nút Khôi phục trên tin nhắn của bạn, để đưa các file agent đã sửa về trạng thái trước tin nhắn đó.",
+  "settings.showThinking": "Hiện nội dung suy nghĩ",
+  "settings.showThinkingDesc":
+    "Hiện nội dung suy nghĩ của agent trong mục Suy nghĩ của chat (với Claude là bản tóm tắt). Áp dụng cho các cuộc trò chuyện bắt đầu sau đó.",
   "settings.git": "Git",
   "settings.gitDesc": "Worktree cho các cuộc trò chuyện và commit message cho view Source Control.",
   "settings.worktree": "Worktree",

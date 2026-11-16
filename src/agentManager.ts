@@ -88,6 +88,13 @@ const withPrefs = (id: string, command: AgentCommand): AgentCommand => {
     : command;
 };
 
+/**
+ * The variables kdCode.showThinking sets. Recent Claude models leave the text out of their thinking
+ * unless asked for a summary; the Claude ACP adapter reads `CLAUDE_CODE_THINKING_DISPLAY`, other agents ignore it.
+ */
+export const thinkingEnv = (): Record<string, string> =>
+  readSettings().showThinking ? { CLAUDE_CODE_THINKING_DISPLAY: "summarized" } : {};
+
 const isEnabled = isProviderEnabled;
 
 /** A command line as a shell would read it, for display. */
@@ -399,12 +406,12 @@ export class AgentManager extends Context.Service<
         yield* notify;
       });
 
-      // What the user sets wins over telemetry: kdCode.env, then the provider's own env.
+      // What the user sets wins over telemetry and kdCode.showThinking: kdCode.env, then the provider's own env.
       const commandFor = (agent: InstalledAgent): AgentCommand =>
         withPrefs(agent.id, {
           command: agent.command,
           args: agent.args,
-          env: { ...agent.env, ...telemetry.env(agent.id), ...readSettings().env },
+          env: { ...agent.env, ...thinkingEnv(), ...telemetry.env(agent.id), ...readSettings().env },
         });
 
       const command = Effect.fn("AgentManager.command")(function* (id: string) {
@@ -417,7 +424,7 @@ export class AgentManager extends Context.Service<
           ? withPrefs(id, {
               command: custom.command.trim(),
               args: custom.args ?? [],
-              env: { ...telemetry.env(id), ...readSettings().env, ...custom.env },
+              env: { ...thinkingEnv(), ...telemetry.env(id), ...readSettings().env, ...custom.env },
             })
           : undefined;
       });

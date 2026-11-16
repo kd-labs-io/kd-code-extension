@@ -16,6 +16,11 @@ body {
   flex-direction: column;
 }
 
+/* Match the editor's selection instead of Chromium's default blue. */
+::selection {
+  background-color: var(--vscode-editor-selectionBackground, Highlight);
+}
+
 /* VS Code's webview styles set scrollbar-color here, and Chromium ignores the rules below while it is set. */
 html {
   scrollbar-color: auto;

@@ -85,6 +85,19 @@ export function GeneralTab({ state }: { state: State }) {
       >
         <Toggle id="showRestore" checked={v.showRestore === true} onChange={(checked) => set("showRestore", checked)} />
       </Field>
+      <Field
+        id="showThinking"
+        label="settings.showThinking"
+        desc="settings.showThinkingDesc"
+        overridden={overridden("showThinking")}
+        inline
+      >
+        <Toggle
+          id="showThinking"
+          checked={v.showThinking !== false}
+          onChange={(checked) => set("showThinking", checked)}
+        />
+      </Field>
     </section>
   );
 }

@@ -15,6 +15,11 @@ body {
   line-height: 1.45;
 }
 
+/* Match the editor's selection instead of Chromium's default blue. */
+::selection {
+  background-color: var(--vscode-editor-selectionBackground, Highlight);
+}
+
 .svg-icon {
   display: contents;
 }

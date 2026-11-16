@@ -72,6 +72,7 @@ function isDefault(key: SettingKey, value: unknown): boolean {
   if (key === "autoScroll") return value === true;
   if (key === "showChanges") return value === true;
   if (key === "showRestore") return value === false;
+  if (key === "showThinking") return value === true;
   if (key === "fontSize" || key === "codeFontSize") return value === 0;
   if (key === "tracing") return value === false;
   if (key === "notifications") return value === true;

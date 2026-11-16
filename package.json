@@ -664,6 +664,11 @@
           "default": false,
           "description": "%config.showRestore%"
         },
+        "kdCode.showThinking": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.showThinking%"
+        },
         "kdCode.fontSize": {
           "type": "number",
           "default": 0,
