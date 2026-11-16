@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries after 0.0.1 are generated from [Conventional Commits](https://www.conventionalcommits.org/) by release-please.
 
+## [0.0.7](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.6...v0.0.7) (2026-11-16)
+
+
+### Added
+
+* **settings:** add showThinking option to show agent thinking in chat ([256a376](https://github.com/kd-labs-io/kd-code-extension/commit/256a3769ead531a0a15c94369004bd6e41d21787))
+
+
+### Fixed
+
+* **chat:** show a dash instead of $0 when the agent doesn't price a session ([a8ca6c0](https://github.com/kd-labs-io/kd-code-extension/commit/a8ca6c0e52887f1ea9b810de250b07b9759ba613))
+
 ## [0.0.6](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.5...v0.0.6) (2026-11-14)
 
 
