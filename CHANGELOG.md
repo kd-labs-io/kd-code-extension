@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); entries after 0.0.1 are generated from [Conventional Commits](https://www.conventionalcommits.org/) by release-please.
 
+## [0.0.8](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.7...v0.0.8) (2026-11-17)
+
+
+### Added
+
+* **chat:** open attached files and attach Explorer selections ([a16f9e3](https://github.com/kd-labs-io/kd-code-extension/commit/a16f9e3e227c20356b6045fa5e7a3107f9e6e88a))
+
 ## [0.0.7](https://github.com/kd-labs-io/kd-code-extension/compare/v0.0.6...v0.0.7) (2026-11-16)
 
 
