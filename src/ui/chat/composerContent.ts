@@ -43,8 +43,13 @@ export function appendContent(content: Content, added: Content): Content {
 }
 
 /** Tokens drawn as chips in the editor. */
+/** How the token for `a` is drawn: images open in the lightbox, files and snippets in an editor. */
+export function tokenInfo(token: string, a: Attachment): TokenInfo {
+  return { token, image: imageSrc(a) !== undefined, file: a.kind === "uri" || a.kind === "snippet" };
+}
+
 export function tokenInfos(inline: Map<string, Attachment>): TokenInfo[] {
-  return [...inline].map(([token, a]) => ({ token, image: imageSrc(a) !== undefined }));
+  return [...inline].map(([token, a]) => tokenInfo(token, a));
 }
 
 /** Forgets the tokens no longer in the text. */

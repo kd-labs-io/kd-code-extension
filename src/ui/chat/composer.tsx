@@ -10,7 +10,7 @@ import { AgentPanel, type AgentChoices, type AgentConfig } from "./agentPanel";
 import { imageSrc } from "./attachments";
 import { copiedImages, htmlTokens, imageTokens, pastedContent, type CopiedToken } from "./clipboard";
 import { useCompare } from "./compare";
-import { addToken, pruneTokens, tokenInfos } from "./composerContent";
+import { addToken, pruneTokens, tokenInfo, tokenInfos } from "./composerContent";
 import { useComposerDrafts } from "./composerDrafts";
 import { codeKey, continueList, paragraphEdit, quoteEdit, type Edit, type Selected } from "./composerEdits";
 import { takeTransfer } from "./composerFiles";
@@ -173,7 +173,7 @@ export function useComposer(options: ComposerOptions) {
       return;
     }
     const space = start > 0 && !/\s/.test(flatText(doc)[start - 1]!) ? " " : "";
-    replaceText(view, start, end, `${space}${token} `, [{ token, image: imageSrc(a) !== undefined }]);
+    replaceText(view, start, end, `${space}${token} `, [tokenInfo(token, a)]);
   }
 
   const suggest = useSuggestions({ editor, active, commands, addAttachment });
@@ -301,6 +301,13 @@ export function useComposer(options: ComposerOptions) {
     return a && src ? { src, name: a.name, token, rect: mark.getBoundingClientRect() } : undefined;
   }
 
+  /** The file or snippet attachment of the token at `target`. */
+  function fileAttachmentAt(target: EventTarget): Attachment | undefined {
+    const mark = target instanceof Element ? target.closest<HTMLElement>("mark.token.file") : null;
+    if (!mark || active === undefined) return undefined;
+    return drafts.inlineOf(active).get(mark.dataset.token!);
+  }
+
   function onKeyDown(e: KeyboardEvent): boolean {
     if (suggest.onKey(e)) return true;
     if (e.isComposing) return false;
@@ -407,6 +414,11 @@ export function useComposer(options: ComposerOptions) {
         onMouseLeave={() => setHover(undefined)}
         onScrollCapture={() => setHover(undefined)}
         onClick={(e) => {
+          const file = fileAttachmentAt(e.target);
+          if (file) {
+            post({ type: "openAttachment", attachment: file });
+            return;
+          }
           const hit = imageTokenAt(e.target);
           if (!hit) return;
           setHover(undefined);

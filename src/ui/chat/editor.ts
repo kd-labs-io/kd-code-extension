@@ -19,10 +19,11 @@ import { FENCE, styleLines, type LineStyle } from "./livePreview";
 /** Stands for a token in flat text, so offsets in it match editor positions. */
 export const TOKEN_CHAR = "￼";
 
-/** A token to draw as a chip; images open in the lightbox. */
+/** A token to draw as a chip; images open in the lightbox, files in an editor. */
 export interface TokenInfo {
   token: string;
   image?: boolean;
+  file?: boolean;
 }
 
 const TokenNode = Node.create({
@@ -35,6 +36,7 @@ const TokenNode = Node.create({
     return {
       token: { default: "", parseHTML: (el) => el.getAttribute("data-token") ?? "", renderHTML: () => ({}) },
       image: { default: false, parseHTML: (el) => el.classList.contains("image"), renderHTML: () => ({}) },
+      file: { default: false, parseHTML: (el) => el.classList.contains("file"), renderHTML: () => ({}) },
     };
   },
   parseHTML() {
@@ -43,7 +45,11 @@ const TokenNode = Node.create({
   renderHTML({ node }) {
     return [
       "mark",
-      { class: node.attrs.image ? "token image" : "token", "data-token": node.attrs.token, contenteditable: "false" },
+      {
+        class: node.attrs.image ? "token image" : node.attrs.file ? "token file" : "token",
+        "data-token": node.attrs.token,
+        contenteditable: "false",
+      },
       node.attrs.token,
     ];
   },
@@ -273,7 +279,7 @@ function linesOf(schema: Schema, text: string, tokens: readonly TokenInfo[]): Fr
       const nodes = parts.flatMap((part) => {
         if (typeof part === "string") return part ? [schema.text(part)] : [];
         left.splice(left.indexOf(part), 1);
-        return [schema.nodes.token!.create({ token: part.token, image: !!part.image })];
+        return [schema.nodes.token!.create({ token: part.token, image: !!part.image, file: !!part.file })];
       });
       return schema.nodes.paragraph!.create(null, nodes);
     }),

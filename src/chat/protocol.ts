@@ -121,6 +121,8 @@ export type FromWebview =
   | { type: "setConfig"; tab: number; configId: string; value: string }
   /** A file path from agent output; relative paths resolve against the tab's folder. `line` is 1-based. */
   | { type: "openFile"; path: string; line?: number }
+  /** A file or snippet attached in the composer, to open at its first line. */
+  | { type: "openAttachment"; attachment: Attachment }
   /** An image from the lightbox (a data URI), to open in a window of its own. */
   | { type: "openImage"; src: string; name: string }
   /** A ```mermaid block's source, to open in an editor tab where it can be zoomed and panned. */
@@ -194,6 +196,7 @@ export type ViewMessage = Extract<
       | "permission"
       | "elicitation"
       | "openFile"
+      | "openAttachment"
       | "openImage"
       | "openDiagram"
       | "searchFiles"

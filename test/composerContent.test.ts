@@ -39,7 +39,7 @@ describe("composer content", () => {
     );
   });
 
-  it("marks image tokens", () => {
+  it("marks image and file tokens", () => {
     assert.deepStrictEqual(
       tokenInfos(
         new Map([
@@ -48,8 +48,8 @@ describe("composer content", () => {
         ]),
       ),
       [
-        { token: "@a.ts", image: false },
-        { token: "@b.png", image: true },
+        { token: "@a.ts", image: false, file: true },
+        { token: "@b.png", image: true, file: false },
       ],
     );
   });

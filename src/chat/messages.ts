@@ -7,7 +7,7 @@ import { importFavorites, toggleFavorite } from "../providers";
 import { thenable, type AppServices, type VscodeError } from "../runtime";
 import { agentOptions, modelOption, type AgentOptions, type Wanted } from "../sessionOptions";
 import { TerminalContext } from "../terminalContext";
-import { imageToTempFile, type AttachmentQueue } from "./attachments";
+import { attachmentLocation, imageToTempFile, type AttachmentQueue } from "./attachments";
 import type { Permissions } from "./permissions";
 import type { ViewMessage } from "./protocol";
 import type { Tab } from "./tabs";
@@ -75,6 +75,11 @@ export class ViewMessages {
       case "openFile":
         yield* this.host.openFile(msg.path, msg.line);
         break;
+      case "openAttachment": {
+        const { path, line } = attachmentLocation(msg.attachment);
+        if (path) yield* this.host.openFile(path, line);
+        break;
+      }
       case "openImage": {
         const file = yield* imageToTempFile(msg.src, msg.name);
         if (file) {

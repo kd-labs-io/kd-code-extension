@@ -195,6 +195,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         return uris.length ? provider.composer.attach(uris) : Effect.void;
       }),
     ),
+    // Keybindings get no URIs, so the Explorer's selection goes through the clipboard.
+    vscode.commands.registerCommand(
+      "kdCode.attachExplorerSelection",
+      run(() =>
+        Effect.gen(function* () {
+          const clipboard = vscode.env.clipboard;
+          const saved = yield* thenable(() => clipboard.readText());
+          const text = yield* Effect.gen(function* () {
+            yield* thenable(() => clipboard.writeText(""));
+            yield* thenable(() => vscode.commands.executeCommand("copyFilePath"));
+            return yield* thenable(() => clipboard.readText());
+          }).pipe(Effect.ensuring(thenable(() => clipboard.writeText(saved)).pipe(Effect.ignore)));
+          const uris = text
+            .split(/\r?\n/)
+            .filter((path) => path.trim())
+            .map((path) => vscode.Uri.file(path));
+          if (uris.length) {
+            yield* provider.composer.attach(uris);
+          }
+        }),
+      ),
+    ),
     vscode.commands.registerCommand(
       "kdCode.addSelection",
       run(() => {

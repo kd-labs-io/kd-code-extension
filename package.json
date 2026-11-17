@@ -158,6 +158,10 @@
         "icon": "$(attach)"
       },
       {
+        "command": "kdCode.attachExplorerSelection",
+        "title": "%command.attach%"
+      },
+      {
         "command": "kdCode.openSettings",
         "title": "%command.openSettings%",
         "category": "%command.category%",
@@ -390,6 +394,10 @@
         {
           "command": "kdCode.cancelCommitMessage",
           "when": "kdCode.generatingCommitMessage"
+        },
+        {
+          "command": "kdCode.attachExplorerSelection",
+          "when": "false"
         },
         {
           "command": "kdCode.quoteSelection",
@@ -1019,6 +1027,18 @@
         "key": "ctrl+alt+l",
         "mac": "cmd+alt+l",
         "when": "terminalFocus && terminalTextSelected"
+      },
+      {
+        "command": "kdCode.attach",
+        "key": "ctrl+alt+l",
+        "mac": "cmd+alt+l",
+        "when": "editorTextFocus && !editorHasSelection && resourceScheme == file"
+      },
+      {
+        "command": "kdCode.attachExplorerSelection",
+        "key": "ctrl+alt+l",
+        "mac": "cmd+alt+l",
+        "when": "filesExplorerFocus && !inputFocus"
       },
       {
         "command": "kdCode.addProblems",
